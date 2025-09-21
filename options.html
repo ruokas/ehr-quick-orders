@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>HIS greiti veiksmai – Nustatymai</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; max-width: 920px; }
+      h1 { font-size: 20px; }
+      textarea { width: 100%; min-height: 200px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      fieldset { border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+      label { display: block; font-weight: 600; margin-bottom: 6px; }
+      button { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; background: #f7f7f8; cursor: pointer; }
+      .muted { color: #666; font-size: 13px; }
+      pre { background: #f5f5f5; padding: 8px; border-radius: 6px; overflow: auto; }
+      .search-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      input[type="text"], select { 
+        width: 100%; padding: 6px 8px; border: 1px solid #ddd; 
+        border-radius: 6px; margin-top: 4px;
+      }
+      #recipesList { 
+        display: grid; gap: 12px; 
+        max-height: 300px; overflow-y: auto;
+        padding: 8px; background: #f5f5f5; border-radius: 6px;
+      }
+      .recipe-card {
+        background: white;
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+      }
+      .recipe-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+      .recipe-category {
+        color: #666;
+        font-size: 12px;
+        padding: 2px 6px;
+        background: #eee;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>HIS greiti veiksmai – Nustatymai</h1>
+    <p class="muted">Koreguokite selectorius ir receptus. Paspauskite <b>Save</b>, tada atnaujinkite savo EHR skirtuką.</p>
+
+    <div class="row">
+      <fieldset>
+        <legend>Selectoriai (CSS)</legend>
+        <label for="selectors">JSON</label>
+        <textarea id="selectors" spellcheck="false"></textarea>
+        <p class="muted">Pavyzdiniai raktai: <code>ordersMenuBtn</code>, <code>newOrderBtn</code>, <code>orderSearchInput</code>, <code>orderTextDropdown</code>, <code>roomInput</code>, <code>emergencyCheckbox</code>, <code>submitBtn</code>, <code>modalRoot</code>.</p>
+      </fieldset>
+      <fieldset>
+        <legend>Xpaths</legend>
+        <label for="xpaths">JSON</label>
+        <textarea id="xpaths" spellcheck="false"></textarea>
+        <p class="muted">Naudok <code>orderSearchItemContains</code> tag pavadinimą (e.g. <code>li</code>). Šis scriptas paspaudžia sąrašo elementą, kuris <i>apima</i> jūsų paieškos terminą.</p>
+      </fieldset>
+    </div>
+
+    <fieldset>
+      <legend>Receptai</legend>
+      <label for="recipes">JSON</label>
+      <textarea id="recipes" spellcheck="false"></textarea>
+      <p class="muted">Kiekvienam receptui reikia <code>id</code>, <code>label</code> ir <code>config</code> su raktai, tokiais kaip <code>searchTerm</code>, <code>dropdownText</code>, <code>room</code>, <code>emergency</code>.</p>
+    </fieldset>
+
+    <div style="margin-top:12px; display:flex; gap:8px; flex-wrap: wrap;">
+      <button id="save">Išsaugoti</button>
+      <button id="reset">Atstatyti į numatytuosius</button>
+      <button id="backup">Eksportuoti nustatymus</button>
+      <button id="restore">Importuoti nustatymus</button>
+      <input type="file" id="restoreFile" style="display:none" accept=".json">
+      <span id="status" class="muted" style="margin-left:8px;"></span>
+    </div>
+    
+    <fieldset style="margin-top:16px;">
+      <legend>Receptų paieška ir kategorijos</legend>
+      <div class="search-row">
+        <div>
+          <label for="recipeSearch">Ieškoti receptų:</label>
+          <input type="text" id="recipeSearch" placeholder="Filtruoti pagal pavadinimą, kategoriją...">
+        </div>
+        <div>
+          <label for="categoryFilter">Kategorija:</label>
+          <select id="categoryFilter">
+            <option value="">Visos kategorijos</option>
+          </select>
+        </div>
+      </div>
+      <div id="recipesList" style="margin-top:12px;"></div>
+    </fieldset>
+
+    <h3>Greitas pradžia</h3>
+    <ol>
+      <li><b>manifest.json</b>, pakeiskite domeną <code>host_permissions</code> ir <code>matches</code> į savo EHR URL.</li>
+      <li>Atidarykite nustatymus (šis puslapis), įklijuokite teisingus selektorius (iš DevTools) ir koreguokite receptus.</li>
+      <li>Perkraukite savo EHR skirtuką; iškylantis skydelis pasirodys dešiniajame apatiniame kampe.</li>
+    </ol>
+    <script src="options.js"></script>
+  </body>
+</html>

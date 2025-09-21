@@ -1,0 +1,100 @@
+#ehrqo-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483647;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+#ehrqo-card {
+  background: rgba(20,20,24,0.96);
+  color: #fff;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  padding: 10px;
+  min-width: 240px;
+  max-width: 340px;
+}
+#ehrqo-card header {
+  display: flex; align-items: center; justify-content: space-between;
+  font-weight: 600; font-size: 14px; letter-spacing: .2px; margin-bottom: 6px;
+}
+#ehrqo-card header button {
+  background: none; border: 0; color: #9aa0a6; cursor: pointer; font-size: 16px;
+}
+#ehrqo-list { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px;
+  max-height: calc(100vh - 200px);
+}
+
+.ehrqo-search {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: #fff;
+  width: 100%;
+  font-size: 13px;
+}
+.ehrqo-search::placeholder { color: rgba(255,255,255,0.5); }
+
+.ehrqo-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.ehrqo-content::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.ehrqo-content::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px;
+}
+
+.ehrqo-category {
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  padding: 4px 6px;
+  margin-top: 4px;
+}
+
+.ehrqo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.ehrqo-btn {
+  background: #2b72ff;
+  border: 0; 
+  border-radius: 10px; 
+  padding: 8px 10px; 
+  color: #fff; 
+  cursor: pointer;
+  font-size: 13px; 
+  text-align: left; 
+  font-weight: 600;
+  transition: transform 0.1s;
+}
+
+.ehrqo-btn:hover {
+  transform: translateY(-1px);
+}
+
+.ehrqo-btn.emergency {
+  background: linear-gradient(45deg, #ff4b4b, #ff6b2b);
+}
+
+.ehrqo-btn.secondary { 
+  background: #3a3f45; 
+  font-weight: 500; 
+}
+#ehrqo-status { margin-top: 6px; font-size: 12px; color: #c5c9d3; min-height: 16px; }
+.ehrqo-muted { opacity: .85; font-weight: 500; }
+.ehrqo-small {
+  font-size: 12px; opacity: 0.9; font-weight: 500;
+}

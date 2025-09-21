@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Greiti veiksmai",
+  "version": "1.0.0",
+  "description": "One\u2011click presets for common repeated tasks.",
+  "permissions": [
+    "scripting",
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://esis.siauliuligonine.lt/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://esis.siauliuligonine.lt/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "options.html",
+  "action": {
+    "default_title": "Greiti veiksmai"
+  }
+}
