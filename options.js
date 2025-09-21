@@ -1,3 +1,4 @@
+// Import default categories and selectors from content.js
 const DEFAULT_SELECTORS = {
   selectors: {
     ordersMenuBtn:    'button#orders',
@@ -13,6 +14,79 @@ const DEFAULT_SELECTORS = {
     orderSearchItemContains: 'li'
   }
 };
+
+// Category management
+let categories = {};
+let selectedCategory = null;
+
+function renderCategoryTree() {
+  const treeEl = document.getElementById('categoryTree');
+  treeEl.innerHTML = '';
+  
+  function renderNode(path, node, level = 0) {
+    const div = document.createElement('div');
+    div.className = 'tree-item' + (path === selectedCategory ? ' selected' : '');
+    if (level > 0) div.classList.add('tree-item-indent');
+    
+    div.textContent = path.split('/').pop();
+    div.dataset.path = path;
+    
+    div.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectCategory(path);
+    });
+    
+    treeEl.appendChild(div);
+    
+    Object.keys(node).sort().forEach(key => {
+      renderNode(path ? `${path}/${key}` : key, node[key], level + 1);
+    });
+  }
+  
+  Object.keys(categories).sort().forEach(key => {
+    renderNode(key, categories[key]);
+  });
+  
+  updateCategoryButtons();
+}
+
+function selectCategory(path) {
+  const oldSelected = document.querySelector('.tree-item.selected');
+  if (oldSelected) oldSelected.classList.remove('selected');
+  
+  if (path) {
+    const newSelected = document.querySelector(`.tree-item[data-path="${path}"]`);
+    if (newSelected) newSelected.classList.add('selected');
+  }
+  
+  selectedCategory = path;
+  updateCategoryEditor();
+  updateCategoryButtons();
+}
+
+function updateCategoryEditor() {
+  const nameEl = document.getElementById('categoryName');
+  const pathEl = document.getElementById('categoryPath');
+  const orderEl = document.getElementById('categoryOrder');
+  
+  if (!selectedCategory) {
+    nameEl.value = '';
+    pathEl.value = '';
+    orderEl.value = '';
+    nameEl.disabled = true;
+    orderEl.disabled = true;
+    return;
+  }
+  
+  nameEl.disabled = false;
+  orderEl.disabled = false;
+  
+  const parts = selectedCategory.split('/');
+  nameEl.value = parts[parts.length - 1];
+  pathEl.value = selectedCategory;
+  // TODO: Implement order
+  orderEl.value = '0';
+}
 
 const DEFAULT_RECIPES = [
   {

@@ -18,27 +18,73 @@ const DEFAULT_XPATHS = {
   orderSearchItemContains: 'li' // will match //li[contains(., "TEXT")]
 };
 
+// Default categories structure
+const DEFAULT_CATEGORIES = {
+  'Imaging': {
+    'Neuro': {},
+    'Chest': {},
+    'Abdomen': {},
+    'MSK': {}
+  },
+  'Labs': {
+    'Urgent': {},
+    'Routine': {}
+  },
+  'Medications': {
+    'Common': {},
+    'Emergency': {}
+  }
+};
+
 // Example recipes – edit in Options page
 const DEFAULT_RECIPES = [
   {
     id: 'ct_head_stroke',
-    label: 'Galvos KT – insultas',
-    config: {
-      searchTerm: 'Galvos KT',
-      dropdownText: 'Insulto protokolas galvos KT (be kontrasto)',
+    label: 'Head CT – stroke',
+    category: 'Imaging/Neuro',
+    config: { 
+      searchTerm: 'Head CT',
+      dropdownText: 'Stroke protocol head CT (non-contrast)',
       emergency: true,
-      room: '118'
-    }
+      room: '12'
+    },
+    order: 1
+  },
+  {
+    id: 'ct_head_trauma',
+    label: 'Head CT – trauma',
+    category: 'Imaging/Neuro',
+    config: {
+      searchTerm: 'Head CT',
+      dropdownText: 'Non-contrast head CT',
+      emergency: true,
+      room: '12'
+    },
+    order: 2
   },
   {
     id: 'cxr_pa_lat',
-    label: 'Krūtinės ląstos Ro',
+    label: 'Chest X‑ray – PA/LAT',
+    category: 'Imaging/Chest',
     config: {
-      searchTerm: 'Krūtinės ląstos Ro',
-      dropdownText: 'PA ir šoninės projekcijos',
+      searchTerm: 'Chest X-ray',
+      dropdownText: 'PA and lateral views',
       emergency: false,
-      room: '118'
-    }
+      room: '12'
+    },
+    order: 1
+  },
+  {
+    id: 'cxr_portable',
+    label: 'Chest X-ray – portable',
+    category: 'Imaging/Chest',
+    config: {
+      searchTerm: 'Chest X-ray',
+      dropdownText: 'Portable AP view',
+      emergency: false,
+      room: '12'
+    },
+    order: 2
   }
 ];
 
