@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: |
+        npm init -y
+        npm install eslint eslint-plugin-json --save-dev
+        
+    - name: Create ESLint config
+      run: |
+        echo '{
+          "env": {
+            "browser": true,
+            "es2021": true,
+            "webextensions": true
+          },
+          "extends": "eslint:recommended",
+          "parserOptions": {
+            "ecmaVersion": "latest",
+            "sourceType": "module"
+          },
+          "rules": {
+            "no-unused-vars": "warn",
+            "no-console": ["warn", { "allow": ["error", "warn", "info"] }]
+          }
+        }' > .eslintrc.json
+        
+    - name: Run ESLint
+      run: npx eslint . --ext .js,.json
+
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Validate manifest.json
+      run: |
+        if ! jq empty manifest.json; then
+          echo "manifest.json is not valid JSON"
+          exit 1
+        fi
+        
+    - name: Check file structure
+      run: |
+        required_files=("manifest.json" "content.js" "options.html" "options.js" "styles.css")
+        for file in "${required_files[@]}"; do
+          if [ ! -f "$file" ]; then
+            echo "Missing required file: $file"
+            exit 1
+          fi
+        done

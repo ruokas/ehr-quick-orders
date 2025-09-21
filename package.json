@@ -1,0 +1,12 @@
+{
+  "name": "ehr-quick-orders",
+  "version": "1.0.0",
+  "scripts": {
+    "lint": "eslint . --ext .js,.json",
+    "lint:fix": "eslint . --ext .js,.json --fix"
+  },
+  "devDependencies": {
+    "eslint": "^8.40.0",
+    "eslint-plugin-json": "^3.1.0"
+  }
+}
