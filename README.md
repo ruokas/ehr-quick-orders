@@ -1,4 +1,24 @@
-# EHR Quick Orders (Chrome MV3)
+# EHR Quick ## Configure
+
+- Open the extension's **Options** page.
+- Paste correct CSS selectors for your EHR in **Selectors**.
+- (Optional) Adjust the `orderSearchItemContains` tag name in **Xpaths** if your dropdown uses a different element (e.g., `div` instead of `li`).
+- Customize **Recipes** (labels + config). Save; refresh EHR tab.
+
+## Recipe Management (Coming Soon)
+
+### Organization
+- Nested categories for better organization (e.g., "Imaging/Neuro")
+- Drag-and-drop recipe ordering
+- Quick search and filtering
+- Collapsible category sections
+
+### Recipe Creation
+- Step-by-step creation wizard
+- Predefined templates
+- Live preview and validation
+- Quick clone and modify
+- Template variables support (Chrome MV3)
 
 A small extension that injects a floating panel with buttons for one‑click repeating tasks in your EHR (e.g., Head CT for stroke). Buttons run scripted sequences that click the standard UI fields you use already.
 
