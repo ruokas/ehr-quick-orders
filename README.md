@@ -17,6 +17,35 @@ A small extension that injects a floating panel with buttons for one‑click rep
 - (Optional) Adjust the `orderSearchItemContains` tag name in **Xpaths** if your dropdown uses a different element (e.g., `div` instead of `li`).
 - Customize **Recipes** (labels + config). Save; refresh EHR tab.
 
+## Development
+
+### Version Control
+
+This project uses Git for version control. To start developing:
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/ruokas/ehr-quick-orders.git
+   cd ehr-quick-orders
+   ```
+
+2. Make changes to the code
+
+3. Commit your changes:
+   ```bash
+   git add .
+   git commit -m "Description of your changes"
+   ```
+
+### Testing Changes
+
+1. After making changes, reload the extension in Chrome:
+   - Go to `chrome://extensions`
+   - Find "EHR Quick Orders"
+   - Click the refresh icon
+
+2. Test the changes in your EHR system
+
 ## Notes
 
 - No external calls; runs locally in your session.
