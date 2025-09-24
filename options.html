@@ -1,235 +1,912 @@
 <!doctype html>
-<html>
+<html lang="en" data-theme="light">
   <head>
     <meta charset="utf-8">
-    <title>HIS greiti veiksmai – Nustatymai</title>
+    <title>HIS greiti veiksmai � Nustatymai</title>
     <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; max-width: 920px; }
-      h1 { font-size: 20px; }
-      textarea { width: 100%; min-height: 200px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-      fieldset { border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
-      label { display: block; font-weight: 600; margin-bottom: 6px; }
-      button { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; background: #f7f7f8; cursor: pointer; }
-      .muted { color: #666; font-size: 13px; }
-      pre { background: #f5f5f5; padding: 8px; border-radius: 6px; overflow: auto; }
-      .search-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-      
-      /* Category Manager */
-      .category-manager {
+      :root {
+        --bg-color: #f5f7fb;
+        --card-bg: #ffffff;
+        --border-color: #e4e7ec;
+        --text-color: #1f2937;
+        --muted-color: #6b7280;
+        --primary-color: #2563eb;
+        --danger-color: #dc2626;
+        --accent-color: #22c55e;
+        --shadow-color: rgba(15, 23, 42, 0.06);
+      }
+
+      [data-theme="dark"] {
+        --bg-color: #0f172a;
+        --card-bg: #111c33;
+        --border-color: #1f2a3d;
+        --text-color: #f3f4f6;
+        --muted-color: #9ca3af;
+        --primary-color: #60a5fa;
+        --danger-color: #f87171;
+        --accent-color: #34d399;
+        --shadow-color: rgba(0, 0, 0, 0.4);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background: var(--bg-color);
+        color: var(--text-color);
+        transition: background 0.3s ease, color 0.3s ease;
+      }
+
+      h1, h2, h3, h4 {
+        margin: 0;
+        font-weight: 600;
+      }
+
+      .muted {
+        color: var(--muted-color);
+        font-size: 14px;
+        margin: 0;
+      }
+
+      .app-shell {
         display: grid;
-        grid-template-columns: 300px 1fr;
+        grid-template-columns: 280px minmax(0, 1fr);
+        gap: 24px;
+      }
+
+      .sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 16px 40px var(--shadow-color);
+      }
+
+      .branding-card h1 {
+        font-size: 22px;
+        margin-bottom: 4px;
+      }
+
+      .theme-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 12px;
+        padding: 12px 0;
+        border-top: 1px solid var(--border-color);
+      }
+
+      .theme-switch {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--muted-color);
+      }
+
+      .theme-switch input {
+        position: absolute;
+        opacity: 0;
+      }
+
+      .switch-track {
+        width: 44px;
+        height: 22px;
+        background: var(--border-color);
+        border-radius: 11px;
+        position: relative;
+        transition: background 0.3s ease;
+      }
+
+      .switch-track::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 16px;
+        height: 16px;
+        background: var(--card-bg);
+        border-radius: 50%;
+        box-shadow: 0 4px 8px rgba(15, 23, 42, 0.15);
+        transition: transform 0.3s ease;
+      }
+
+      .theme-switch input:checked + .switch-track {
+        background: var(--primary-color);
+      }
+
+      .theme-switch input:checked + .switch-track::after {
+        transform: translateX(22px);
+      }
+
+      .status-area {
+        margin-top: 12px;
+        min-height: 24px;
+      }
+
+      .nav-card h3,
+      .actions-card h3 {
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted-color);
+        margin-bottom: 12px;
+      }
+
+      .nav-buttons {
+        display: grid;
+        gap: 8px;
+      }
+
+      .tab-button {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        background: transparent;
+        color: var(--text-color);
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+      }
+
+      .tab-button.active {
+        background: rgba(37, 99, 235, 0.12);
+        border-color: rgba(37, 99, 235, 0.4);
+      }
+
+      .tab-button:hover {
+        transform: translateX(2px);
+      }
+
+      .actions-card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .action-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      button {
+        appearance: none;
+        border: none;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        color: var(--text-color);
+        background: rgba(148, 163, 184, 0.18);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      }
+
+      button.primary-btn {
+        background: var(--primary-color);
+        color: #ffffff;
+      }
+
+      button.secondary-btn {
+        background: rgba(148, 163, 184, 0.18);
+      }
+
+      button.danger,
+      button.small-btn.danger {
+        background: rgba(220, 38, 38, 0.14);
+        color: var(--danger-color);
+      }
+
+      button.small-btn {
+        padding: 6px 10px;
+        font-size: 13px;
+        border-radius: 10px;
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      button:hover:not(:disabled) {
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+        transform: translateY(-1px);
+      }
+
+      .main-content {
+        display: flex;
+        flex-direction: column;
         gap: 20px;
+      }
+
+      .tab-panel {
+        display: none;
+      }
+
+      .tab-panel.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .panel-header {
         margin-bottom: 16px;
       }
-      .tree-container {
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        padding: 8px;
-        min-height: 200px;
-        max-height: 400px;
-        overflow-y: auto;
+
+      .panel-header h2 {
+        font-size: 20px;
+        margin-bottom: 4px;
       }
-      .tree-item {
-        padding: 4px 8px;
-        margin: 2px 0;
-        cursor: pointer;
-        border-radius: 4px;
+
+      .selector-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+
+      .chip-list {
         display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .selector-chip {
+        display: inline-flex;
         align-items: center;
-      }
-      .tree-item:hover { background: #f0f0f0; }
-      .tree-item.selected { background: #e3f2fd; }
-      .tree-item-indent { margin-left: 20px; }
-      
-      /* Buttons */
-      .small-btn {
-        padding: 4px 8px;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(59, 130, 246, 0.12);
+        color: var(--text-color);
+        border: 1px solid rgba(59, 130, 246, 0.25);
         font-size: 12px;
-        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.2s ease;
       }
-      .primary-btn {
-        background: #2196f3;
-        color: white;
-        border: none;
-        padding: 6px 12px;
-        border-radius: 4px;
+
+      .selector-chip .chip-status {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted-color);
       }
-      .danger { background: #ffebee; color: #d32f2f; }
-      
-      /* Recipe List */
-      .recipes-toolbar {
+
+      .selector-chip.chip-configured {
+        background: rgba(34, 197, 94, 0.15);
+        border-color: rgba(34, 197, 94, 0.35);
+      }
+
+      .selector-chip.chip-configured .chip-status {
+        color: var(--accent-color);
+      }
+
+      .selector-chip.chip-missing {
+        background: rgba(248, 113, 113, 0.16);
+        border-color: rgba(239, 68, 68, 0.35);
+      }
+
+      .selector-chip.chip-missing .chip-status {
+        color: var(--danger-color);
+      }
+
+      .selector-chip:hover {
+        transform: translateY(-1px);
+      }
+
+      .card-section {
+        margin-bottom: 20px;
+      }
+
+      .card-section h3 {
+        margin-bottom: 10px;
+        font-size: 16px;
+      }
+
+      .selector-row {
+        display: grid;
+        grid-template-columns: 180px 1fr auto;
+        gap: 10px;
+        align-items: center;
+        padding: 6px 0;
+      }
+
+      .selector-row label {
+        font-size: 14px;
+      }
+
+      input[type="text"],
+      input[type="number"],
+      select,
+      textarea {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--card-bg);
+        color: var(--text-color);
+        font-size: 14px;
+      }
+
+      textarea {
+        min-height: 120px;
+        font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+        resize: vertical;
+      }
+
+      .selector-actions {
         display: flex;
         gap: 8px;
-        margin-bottom: 12px;
-        align-items: center;
       }
-      .search-box {
+
+      .custom-selector-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .custom-selector-row {
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 8px 12px;
+        background: rgba(148, 163, 184, 0.12);
+      }
+
+      .custom-selector-empty {
+        margin: 0;
+      }
+
+      .collapsible-card {
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 12px 16px;
+        background: rgba(148, 163, 184, 0.08);
+        margin-bottom: 16px;
+      }
+
+      .collapsible-card > summary {
+        cursor: pointer;
+        font-weight: 600;
+        list-style: none;
+      }
+
+      .collapsible-card[open] {
+        background: rgba(37, 99, 235, 0.08);
+      }
+
+      .collapsible-card textarea {
+        margin-top: 12px;
+        min-height: 160px;
+      }
+
+      .category-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
+        gap: 20px;
+      }
+
+      .tree-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .tree-container {
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 12px;
+        max-height: 360px;
+        overflow-y: auto;
+        background: rgba(148, 163, 184, 0.08);
+      }
+
+      .tree-item {
+        padding: 6px 10px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+
+      .tree-item:hover {
+        background: rgba(37, 99, 235, 0.12);
+      }
+
+      .tree-item.selected {
+        background: rgba(37, 99, 235, 0.2);
+        color: var(--primary-color);
+      }
+
+      .tree-item-indent {
+        margin-left: 20px;
+      }
+
+      .category-editor .form-group {
+        margin-bottom: 12px;
+      }
+
+      .recipes-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .recipes-filters {
         display: flex;
         gap: 8px;
         margin-left: auto;
       }
-      .recipes-list {
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        margin-bottom: 12px;
-        max-height: 300px;
-        overflow-y: auto;
+
+      .recipe-grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        margin-bottom: 16px;
       }
-      .recipe-item {
-        padding: 8px;
-        border-bottom: 1px solid #eee;
-        cursor: pointer;
-      }
-      .recipe-item:hover { background: #f5f5f5; }
-      .recipe-item.selected { background: #e3f2fd; }
-      
-      /* Forms */
-      .form-group {
-        margin-bottom: 12px;
-      }
-      .form-group label {
-        display: block;
-        margin-bottom: 4px;
-        font-weight: normal;
-      }
-      input[type="text"],
-      input[type="number"] {
-        width: 100%;
-        padding: 6px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-      }
-      input[disabled] {
-        background: #f5f5f5;
-        cursor: not-allowed;
-      }
-      input[type="text"], select { 
-        width: 100%; padding: 6px 8px; border: 1px solid #ddd; 
-        border-radius: 6px; margin-top: 4px;
-      }
-      #recipesList { 
-        display: grid; gap: 12px; 
-        max-height: 300px; overflow-y: auto;
-        padding: 8px; background: #f5f5f5; border-radius: 6px;
-      }
+
       .recipe-card {
-        background: white;
-        padding: 12px;
-        border-radius: 6px;
-        border: 1px solid #ddd;
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 16px;
+        background: rgba(148, 163, 184, 0.08);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        cursor: pointer;
+        transition: border-color 0.2s ease, transform 0.2s ease;
       }
-      .recipe-header {
+
+      .recipe-card:hover {
+        border-color: rgba(37, 99, 235, 0.35);
+        transform: translateY(-2px);
+      }
+
+      .recipe-card-header {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 8px;
+        align-items: center;
       }
-      .recipe-category {
-        color: #666;
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 999px;
         font-size: 12px;
-        padding: 2px 6px;
-        background: #eee;
-        border-radius: 4px;
+        background: rgba(37, 99, 235, 0.12);
+        color: var(--primary-color);
+      }
+
+      .badge.hotkey {
+        background: rgba(234, 179, 8, 0.18);
+        color: #b45309;
+      }
+
+      .recipe-meta {
+        display: grid;
+        gap: 6px;
+        font-size: 13px;
+      }
+
+      .recipe-card-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .empty-state {
+        padding: 24px;
+        border: 1px dashed var(--border-color);
+        border-radius: 16px;
+        text-align: center;
+        color: var(--muted-color);
+      }
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        display: none;
+        align-items: flex-start;
+        justify-content: center;
+        overflow-y: auto;
+        padding: 40px 16px;
+        z-index: 1000;
+      }
+
+      .modal-card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 520px;
+        width: 100%;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+      }
+
+      .modal-card h3 {
+        margin-bottom: 16px;
+      }
+
+      .modal-card .form-group {
+        margin-bottom: 14px;
+      }
+
+      .modal-actions {
+        margin-top: 20px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      .snackbar {
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        transform: translateX(-50%) translateY(100%);
+        background: var(--text-color);
+        color: var(--card-bg);
+        padding: 12px 20px;
+        border-radius: 999px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.25);
+        transition: transform 0.3s ease;
+        z-index: 2000;
+        pointer-events: none;
+      }
+
+      .snackbar[data-type="error"] {
+        background: var(--danger-color);
+      }
+
+      .snackbar[data-type="success"] {
+        background: var(--accent-color);
+        color: #0b1f15;
+      }
+
+      .snackbar.visible {
+        transform: translateX(-50%) translateY(0);
+      }
+
+      @media (max-width: 1080px) {
+        .app-shell {
+          grid-template-columns: 1fr;
+        }
+        .sidebar {
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          display: grid;
+        }
+        .nav-buttons {
+          grid-auto-flow: column;
+          overflow-x: auto;
+        }
+      }
+
+      @media (max-width: 720px) {
+        body {
+          padding: 16px;
+        }
+        .recipe-grid {
+          grid-template-columns: 1fr;
+        }
+        .category-layout {
+          grid-template-columns: 1fr;
+        }
+        .selector-row {
+          grid-template-columns: 1fr;
+        }
+        .selector-actions {
+          justify-content: flex-start;
+        }
+        .recipes-filters {
+          width: 100%;
+          flex-direction: column;
+        }
       }
     </style>
   </head>
   <body>
-    <h1>HIS greiti veiksmai – Nustatymai</h1>
-    <p class="muted">Koreguokite selectorius ir receptus. Paspauskite <b>Save</b>, tada atnaujinkite savo EHR skirtuką.</p>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <section class="card branding-card">
+          <div>
+            <h1>Greiti veiksmai</h1>
+            <p class="muted">Tvarkykite greito uzsakymo selektorius ir sablonus</p>
+          </div>
+          <div class="theme-toggle">
+            <span class="muted">Isvaizda</span>
+            <label class="theme-switch">
+              <input type="checkbox" id="themeToggle">
+              <span class="switch-track"></span>
+              <span class="muted">Tamsus rezimas</span>
+            </label>
+          </div>
+          <div class="status-area">
+            <span id="status" class="muted" role="status" aria-live="polite"></span>
+          </div>
+        </section>
 
-    <div class="row">
-      <fieldset>
-        <legend>Selectoriai (CSS)</legend>
-        <label for="selectors">JSON</label>
-        <textarea id="selectors" spellcheck="false"></textarea>
-        <p class="muted">Pavyzdiniai raktai: <code>ordersMenuBtn</code>, <code>newOrderBtn</code>, <code>orderSearchInput</code>, <code>orderTextDropdown</code>, <code>roomInput</code>, <code>emergencyCheckbox</code>, <code>submitBtn</code>, <code>modalRoot</code>.</p>
-      </fieldset>
-      <fieldset>
-        <legend>Xpaths</legend>
-        <label for="xpaths">JSON</label>
-        <textarea id="xpaths" spellcheck="false"></textarea>
-        <p class="muted">Naudok <code>orderSearchItemContains</code> tag pavadinimą (e.g. <code>li</code>). Šis scriptas paspaudžia sąrašo elementą, kuris <i>apima</i> jūsų paieškos terminą.</p>
-      </fieldset>
+        <section class="card nav-card">
+          <h3>Skiltys</h3>
+          <div class="nav-buttons">
+            <button class="tab-button active" data-tab="selectors">Selektoriai</button>
+            <button class="tab-button" data-tab="recipes">Sablonai</button>
+            <button class="tab-button" data-tab="categories">Kategorijos</button>
+          </div>
+        </section>
+
+        <section class="card actions-card">
+          <h3>Greiti veiksmai</h3>
+          <div class="action-group">
+            <button id="save" class="primary-btn">I�saugoti</button>
+            <button id="reset" class="secondary-btn">Atstatyti i numatytuosius</button>
+          </div>
+          <div class="action-group">
+            <button id="backup" class="secondary-btn">Eksportuoti nustatymus</button>
+            <button id="restore" class="secondary-btn">Importuoti nustatymus</button>
+            <input type="file" id="restoreFile" hidden accept=".json">
+          </div>
+        </section>
+      </aside>
+
+      <main class="main-content">
+        <section id="selectors-panel" class="tab-panel active">
+          <div class="card">
+            <div class="panel-header">
+              <h2>Selektoriai</h2>
+              <p class="muted">Konfiguruokite CSS selektorius ir XKelias isreiskas naudojamas rinkiklio.</p>
+            </div>
+
+            <div class="selector-overview">
+              <div>
+                <h3>Numatytieji CSS selektoriai</h3>
+                <div id="defaultSelectorChips" class="chip-list"></div>
+              </div>
+              <div>
+                <h3>Numatytieji XKelias irasai</h3>
+                <div id="defaultXpathChips" class="chip-list"></div>
+              </div>
+            </div>
+
+            <div class="card-section">
+              <h3>Greita prieiga</h3>
+              <div class="selector-row">
+                <label for="sel_ordersMenuBtn">Uzsakymu meniu mygtukas</label>
+                <input type="text" id="sel_ordersMenuBtn" data-key="ordersMenuBtn">
+                <div class="selector-actions">
+                  <button class="small-btn pick-selector" data-target="ordersMenuBtn">Pasirinkti</button>
+                </div>
+              </div>
+              <div class="selector-row">
+                <label for="sel_newOrderBtn">Naujo uzsakymo mygtukas</label>
+                <input type="text" id="sel_newOrderBtn" data-key="newOrderBtn">
+                <div class="selector-actions">
+                  <button class="small-btn pick-selector" data-target="newOrderBtn">Pasirinkti</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-section">
+              <h3>Uzsakymo forma</h3>
+              <div class="selector-row">
+                <label for="sel_orderSearchInput">Paieskos laukas</label>
+                <input type="text" id="sel_orderSearchInput" data-key="orderSearchInput">
+                <div class="selector-actions">
+                  <button class="small-btn pick-selector" data-target="orderSearchInput">Pasirinkti</button>
+                </div>
+              </div>
+              <div class="selector-row">
+                <label for="sel_orderTextDropdown">Uzsakymo teksto sarasas</label>
+                <input type="text" id="sel_orderTextDropdown" data-key="orderTextDropdown">
+                <div class="selector-actions">
+                  <button class="small-btn pick-selector" data-target="orderTextDropdown">Pasirinkti</button>
+                </div>
+              </div>
+              <div class="selector-row">
+                <label for="sel_roomInput">Kambario laukas</label>
+                <input type="text" id="sel_roomInput" data-key="roomInput">
+                <div class="selector-actions">
+                  <button class="small-btn pick-selector" data-target="roomInput">Pasirinkti</button>
+                </div>
+              </div>
+              <div class="selector-row">
+                <label for="sel_emergencyCheckbox">Skubos varnele</label>
+                <input type="text" id="sel_emergencyCheckbox" data-key="emergencyCheckbox">
+                <div class="selector-actions">
+                  <button class="small-btn pick-selector" data-target="emergencyCheckbox">Pasirinkti</button>
+                </div>
+              </div>
+              <div class="selector-row">
+                <label for="sel_submitBtn">Pateikimo mygtukas</label>
+                <input type="text" id="sel_submitBtn" data-key="submitBtn">
+                <div class="selector-actions">
+                  <button class="small-btn pick-selector" data-target="submitBtn">Pasirinkti</button>
+                </div>
+              </div>
+              <div class="selector-row">
+                <label for="sel_modalRoot">Modalo konteineris</label>
+                <input type="text" id="sel_modalRoot" data-key="modalRoot">
+                <div class="selector-actions">
+                  <button class="small-btn pick-selector" data-target="modalRoot">Pasirinkti</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-section">
+              <h3>Pasirinktiniai CSS selektoriai</h3>
+              <p class="muted">Prideti papildomu selektoriu, budingu jusu diegimui.</p>
+              <div id="customCssSelektoriai" class="custom-selector-list"></div>
+              <button type="button" id="addCustomCssSelector" class="secondary-btn">Prideti CSS selektoriu</button>
+            </div>
+
+            <details class="collapsible-card">
+              <summary>CSS selektoriu JSON</summary>
+              <textarea id="selectors" spellcheck="false"></textarea>
+              <p class="muted">Ispanstresniams: redaguokite selektoriu zemelapi tiesiogiai.</p>
+            </details>
+
+            <div class="card-section">
+              <h3>Paieskos rezultatu XKelias</h3>
+              <div class="selector-row">
+                <label for="sel_orderSearchItemContains">Rezultato zyme</label>
+                <input type="text" id="sel_orderSearchItemContains" value="li" data-key="orderSearchItemContains">
+                <div class="selector-actions">
+                  <button class="small-btn pick-selector" data-target="orderSearchItemContains">Pasirinkti</button>
+                </div>
+              </div>
+              <p class="muted">Naudojama pasirenkamiems elementams paieskos rezultatuose nurodyti.</p>
+            </div>
+
+            <div class="card-section">
+              <h3>Pasirinktiniai XKelias irasai</h3>
+              <p class="muted">Laikykite papildomu XKelias trumpiniu sudetingiems scenarijams.</p>
+              <div id="customXpathSelektoriai" class="custom-selector-list"></div>
+              <button type="button" id="addCustomXpathSelector" class="secondary-btn">Prideti XKelias selektoriu</button>
+            </div>
+
+            <details class="collapsible-card">
+              <summary>XKelias JSON</summary>
+              <textarea id="xpaths" spellcheck="false"></textarea>
+              <p class="muted">Ispanstresniams: redaguokite XKelias apibrezimus tiesiogiai.</p>
+            </details>
+          </div>
+        </section>
+
+        <section id="recipes-panel" class="tab-panel">
+          <div class="card">
+            <div class="panel-header">
+              <h2>Sablonai</h2>
+              <p class="muted">Kurti pakartotinai naudojamus greitu uzsakymu sablonus su is anksto uzpildytais nustatymais.</p>
+            </div>
+
+            <div class="recipes-toolbar">
+              <button id="addRecipe" class="primary-btn">Prideti sablona</button>
+              <div class="recipes-filters">
+                <input type="text" id="recipeSearch" placeholder="Ieskoti sablonu...">
+                <select id="categoryFilter">
+                  <option value="">Visos kategorijos</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="recipesList" class="recipe-grid" aria-live="polite"></div>
+
+            <details class="collapsible-card">
+              <summary>Sablonai JSON</summary>
+              <textarea id="recipes" spellcheck="false"></textarea>
+              <p class="muted">Ispanstresniams: redaguokite sablonu masyva rankiniu budu.</p>
+            </details>
+          </div>
+        </section>
+
+        <section id="categories-panel" class="tab-panel">
+          <div class="card">
+            <div class="panel-header">
+              <h2>Kategorijos</h2>
+              <p class="muted">Grupuokite sablonus i patogias kolekcijas.</p>
+            </div>
+
+            <div class="category-layout">
+              <div>
+                <div class="tree-toolbar">
+                  <button id="addRootCategory" class="secondary-btn">Prideti pagrindine kategorija</button>
+                  <button id="addSubCategory" class="secondary-btn" disabled>Prideti pokategorija</button>
+                  <button id="deleteCategory" class="secondary-btn danger" disabled>Pasalinti</button>
+                </div>
+                <div id="categoryTree" class="tree-container"></div>
+              </div>
+
+              <div class="card-section" id="categoryEditor">
+                <h3>Kategorijos informacija</h3>
+                <div class="form-group">
+                  <label for="categoryPavadinimas">Pavadinimas</label>
+                  <input type="text" id="categoryPavadinimas" disabled>
+                </div>
+                <div class="form-group">
+                  <label for="categoryKelias">Kelias</label>
+                  <input type="text" id="categoryKelias" disabled>
+                </div>
+                <div class="form-group">
+                  <label for="categoryOrder">Rodymo tvarka</label>
+                  <input type="number" id="categoryOrder" min="0" disabled>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
 
-    <fieldset>
-      <legend>Categories</legend>
-      <div class="category-manager">
-        <div class="category-tree">
-          <div class="tree-toolbar">
-            <button id="addRootCategory" class="small-btn">Add Root Category</button>
-            <button id="addSubCategory" class="small-btn" disabled>Add Subcategory</button>
-            <button id="deleteCategory" class="small-btn danger" disabled>Delete</button>
-          </div>
-          <div id="categoryTree" class="tree-container"></div>
-        </div>
-        <div class="category-editor" id="categoryEditor">
-          <h4>Category Details</h4>
+    <div id="recipeModal" class="modal-backdrop" aria-modal="true" role="dialog">
+      <div class="modal-card">
+        <h3 id="recipeModalTitle">Prideti sablona</h3>
+        <form id="recipeForm">
           <div class="form-group">
-            <label for="categoryName">Name:</label>
-            <input type="text" id="categoryName" disabled>
+            <label for="recipeId">ID</label>
+            <input type="text" id="recipeId" required placeholder="e.g., ct_head_stroke">
           </div>
           <div class="form-group">
-            <label for="categoryPath">Path:</label>
-            <input type="text" id="categoryPath" disabled>
+            <label for="recipePavadinimas">Pavadinimas</label>
+            <input type="text" id="recipePavadinimas" required placeholder="e.g., CT Head � Stroke Protocol">
           </div>
           <div class="form-group">
-            <label for="categoryOrder">Display Order:</label>
-            <input type="number" id="categoryOrder" min="0" disabled>
+            <label for="recipeCategory">Category</label>
+            <select id="recipeCategory" required></select>
           </div>
-        </div>
+          <div class="form-group">
+            <label for="recipeSearchTerm">Paieskos fraze</label>
+            <input type="text" id="recipeSearchTerm" required placeholder="Paieskos fraze to find the order">
+          </div>
+          <div class="form-group">
+            <label for="recipeDropdownText">Saraso tekstas (pasirinktinai)</label>
+            <input type="text" id="recipeDropdownText" placeholder="Tekstas, kuri reikia pasirinkti sarase">
+          </div>
+          <div class="form-group">
+            <label for="recipeRoom">Kambarys (pasirinktinai)</label>
+            <input type="text" id="recipeRoom" placeholder="Kambario numeris">
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="recipeEmergency">
+              Skubus uzsakymas
+            </label>
+          </div>
+          <div class="form-group">
+            <label for="recipeHotkey">Spartusis klavisas (pasirinktinai)</label>
+            <input type="text" id="recipeHotkey" placeholder="e.g., Ctrl+1, Alt+S">
+            <p class="muted">Formatas: Ctrl/Alt/Shift + klavisas (pvz., Ctrl+1, Alt+S)</p>
+          </div>
+          <div class="modal-actions">
+            <button type="button" id="recipeAtsaukti" class="secondary-btn">Atsaukti</button>
+            <button type="submit" id="recipeIssaugoti" class="primary-btn">Issaugoti</button>
+          </div>
+        </form>
       </div>
-    </fieldset>
-
-    <fieldset>
-      <legend>Recipes</legend>
-      <div class="recipes-toolbar">
-        <button id="addRecipe" class="primary-btn">Add Recipe</button>
-        <button id="cloneRecipe" class="small-btn" disabled>Clone Selected</button>
-        <div class="search-box">
-          <input type="text" id="recipeSearch" placeholder="Search recipes...">
-          <select id="categoryFilter">
-            <option value="">All Categories</option>
-          </select>
-        </div>
-      </div>
-      <div id="recipesList" class="recipes-list"></div>
-      <div class="recipe-editor">
-        <textarea id="recipes" spellcheck="false"></textarea>
-        <p class="muted">Each recipe needs <code>id</code>, <code>label</code>, <code>category</code>, and <code>config</code> with keys like <code>searchTerm</code>, <code>dropdownText</code>, <code>room</code>, <code>emergency</code>.</p>
-      </div>
-    </fieldset>    <div style="margin-top:12px; display:flex; gap:8px; flex-wrap: wrap;">
-      <button id="save">Išsaugoti</button>
-      <button id="reset">Atstatyti į numatytuosius</button>
-      <button id="backup">Eksportuoti nustatymus</button>
-      <button id="restore">Importuoti nustatymus</button>
-      <input type="file" id="restoreFile" style="display:none" accept=".json">
-      <span id="status" class="muted" style="margin-left:8px;"></span>
     </div>
-    
-    <fieldset style="margin-top:16px;">
-      <legend>Receptų paieška ir kategorijos</legend>
-      <div class="search-row">
-        <div>
-          <label for="recipeSearch">Ieškoti receptų:</label>
-          <input type="text" id="recipeSearch" placeholder="Filtruoti pagal pavadinimą, kategoriją...">
-        </div>
-        <div>
-          <label for="categoryFilter">Kategorija:</label>
-          <select id="categoryFilter">
-            <option value="">Visos kategorijos</option>
-          </select>
-        </div>
-      </div>
-      <div id="recipesList" style="margin-top:12px;"></div>
-    </fieldset>
 
-    <h3>Greitas pradžia</h3>
-    <ol>
-      <li><b>manifest.json</b>, pakeiskite domeną <code>host_permissions</code> ir <code>matches</code> į savo EHR URL.</li>
-      <li>Atidarykite nustatymus (šis puslapis), įklijuokite teisingus selektorius (iš DevTools) ir koreguokite receptus.</li>
-      <li>Perkraukite savo EHR skirtuką; iškylantis skydelis pasirodys dešiniajame apatiniame kampe.</li>
-    </ol>
+    <div id="snackbar" class="snackbar" role="status" aria-live="polite"></div>
     <script src="options.js"></script>
   </body>
 </html>
+

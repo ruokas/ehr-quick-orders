@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Greiti veiksmai",
-  "version": "1.0.0",
-  "description": "One\u2011click presets for common repeated tasks.",
+  "version": "1.1.0",
+  "description": "Quick access and configuration for common EHR actions",
   "permissions": [
     "scripting",
     "activeTab",
-    "storage"
+    "storage",
+    "tabs"
   ],
   "host_permissions": [
     "https://esis.siauliuligonine.lt/*"
@@ -17,16 +18,36 @@
         "https://esis.siauliuligonine.lt/*"
       ],
       "js": [
-        "content.js"
+        "content.js",
+        "selector-picker.js"
       ],
       "css": [
         "styles.css"
       ],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["selector-picker.js"],
+      "matches": ["https://esis.siauliuligonine.lt/*"]
     }
   ],
   "options_page": "options.html",
   "action": {
-    "default_title": "Greiti veiksmai"
+    "default_title": "Greiti veiksmai",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
   }
 }

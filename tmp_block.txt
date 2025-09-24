@@ -1,0 +1,15 @@
+const selEl = document.getElementById('selectors');
+const xpEl  = document.getElementById('xpaths');
+const recEl = document.getElementById('recipes');
+const status = document.getElementById('status');
+const customCssContainer = document.getElementById('customCssSelectors');
+const customXpathContainer = document.getElementById('customXpathSelectors');
+const addCustomCssButton = document.getElementById('addCustomCssSelector');
+const addCustomXpathButton = document.getElementById('addCustomXpathSelector');
+
+if (addCustomCssButton) {
+  addCustomCssButton.addEventListener('click', () => handleAddCustomSelector('css'));
+}
+
+if (addCustomXpathButton) {
+  addCustomXpathButton.addEventLi

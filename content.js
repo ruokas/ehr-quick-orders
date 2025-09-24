@@ -48,6 +48,7 @@ const DEFAULT_RECIPES = [
       emergency: true,
       room: '12'
     },
+    hotkey: 'Ctrl+1',
     order: 1
   },
   {
@@ -197,6 +198,153 @@ function injectPanel(state) {
   const panel = document.createElement('div');
   panel.id = 'ehrqo-panel';
   panel.innerHTML = `
+    <style>
+      #ehrqo-panel {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 10000;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 14px;
+      }
+      #ehrqo-card {
+        background: #1e1e1e;
+        color: #e0e0e0;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        width: 280px;
+        max-height: calc(100vh - 40px);
+        display: flex;
+        flex-direction: column;
+      }
+      #ehrqo-card header {
+        padding: 8px 12px;
+        border-bottom: 1px solid #333;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: move;
+      }
+      #ehrqo-card header button {
+        padding: 2px 6px;
+        background: none;
+        border: none;
+        color: #888;
+        cursor: pointer;
+        opacity: 0.7;
+      }
+      #ehrqo-card header button:hover { 
+        opacity: 1;
+        color: #e0e0e0;
+      }
+      
+      #ehrqo-list {
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        overflow-y: auto;
+        max-height: 400px;
+      }
+      
+      .ehrqo-search {
+        width: 100%;
+        padding: 4px 8px;
+        border: 1px solid #444;
+        border-radius: 4px;
+        background: #252525;
+        color: #e0e0e0;
+        font-size: 13px;
+        margin-bottom: 6px;
+        pointer-events: auto;
+        position: relative;
+        z-index: 1;
+      }
+      
+      .ehrqo-search:focus {
+        outline: none;
+        border-color: #0078d4;
+      }
+      
+      .ehrqo-btn {
+        padding: 6px 8px;
+        border: 1px solid #333;
+        border-radius: 4px;
+        background: #252525;
+        color: #e0e0e0;
+        cursor: pointer;
+        text-align: left;
+        font-size: 13px;
+        line-height: 1.2;
+        transition: background 0.2s;
+        width: 100%;
+      }
+      
+      .ehrqo-btn:hover {
+        background: #333;
+      }
+      
+      .ehrqo-btn:active {
+        background: #404040;
+      }
+      
+      .ehrqo-btn.emergency {
+        background: #331f1f;
+      }
+      
+      .ehrqo-btn.emergency:hover {
+        background: #402424;
+      }
+      
+      .ehrqo-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      
+      .ehrqo-muted {
+        padding: 6px 8px;
+        color: #888;
+        font-size: 11px;
+        text-align: center;
+      }
+      
+      .ehrqo-empty {
+        text-align: center;
+        color: #888;
+        padding: 12px;
+        font-size: 13px;
+      }
+      
+      .ehrqo-btn:focus {
+        outline: 1px solid #0078d4;
+      }
+
+      .ehrqo-btn {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .ehrqo-hotkey {
+        font-size: 11px;
+        opacity: 0.7;
+        background: #333;
+        padding: 2px 4px;
+        border-radius: 3px;
+        margin-left: 8px;
+      }
+      
+      @keyframes status-fade {
+        0% { opacity: 0; transform: translateY(8px); }
+        10% { opacity: 1; transform: translateY(0); }
+        90% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-8px); }
+      }
+      
+      #ehrqo-status:not(:empty) {
+        animation: status-fade 2.5s ease-in-out forwards;
+      }
+    </style>
     <div id="ehrqo-card" role="region" aria-label="EHR Quick Orders">
       <header>
         <span>Greiti veiksmai</span>
@@ -205,7 +353,10 @@ function injectPanel(state) {
           <button id="ehrqo-close" title="Hide">✕</button>
         </div>
       </header>
-      <div id="ehrqo-list"></div>
+      <div id="ehrqo-list">
+        <input type="text" class="ehrqo-search" placeholder="Ieškoti receptų..." id="ehrqo-search">
+        <div id="ehrqo-content"></div>
+      </div>
       <div id="ehrqo-status" class="ehrqo-muted"></div>
     </div>
   `;
@@ -216,7 +367,7 @@ function injectPanel(state) {
   let drag = { x: 0, y: 0, dx: 0, dy: 0, active: false };
   card.addEventListener('mousedown', (e) => {
     if (!(e.target instanceof HTMLElement)) return;
-    if (e.target.closest('button')) return;
+    if (e.target.closest('button') || e.target.closest('input')) return;
     drag.active = true; drag.x = e.clientX; drag.y = e.clientY;
     const rect = panel.getBoundingClientRect(); drag.dx = rect.left; drag.dy = rect.top;
     e.preventDefault();
@@ -234,69 +385,97 @@ function injectPanel(state) {
 
   api.statusEl = panel.querySelector('#ehrqo-status');
 
-  // Build buttons
-  const list = panel.querySelector('#ehrqo-list');
+  // Initialize UI elements
+  const search = panel.querySelector('#ehrqo-search');
+  const content = panel.querySelector('#ehrqo-content');
   
-  // Group by category
-  const categories = {};
-  state.recipes.forEach(r => {
-    const cat = r.category || 'Bendri';
-    if (!categories[cat]) categories[cat] = [];
-    categories[cat].push(r);
-  });
-  
-  // Search input
-  const search = document.createElement('input');
-  search.type = 'text';
-  search.placeholder = 'Ieškoti receptų...';
-  search.className = 'ehrqo-search';
-  list.appendChild(search);
-  
-  const content = document.createElement('div');
-  content.className = 'ehrqo-content';
-  list.appendChild(content);
-  
-  function renderRecipes(filter = '') {
+  function renderRecipes(searchFilter = '') {
     content.innerHTML = '';
-    const lFilter = filter.toLowerCase();
+    const lFilter = searchFilter.toLowerCase();
     
-    Object.entries(categories).forEach(([category, recipes]) => {
-      // Filter recipes
-      const filtered = recipes.filter(r => 
-        !filter || 
+    // Filter recipes
+    let recipes = state.recipes;
+    if (searchFilter) {
+      recipes = recipes.filter(r => 
         r.label.toLowerCase().includes(lFilter) ||
         r.config.searchTerm.toLowerCase().includes(lFilter)
       );
+    }
+    
+    // No results message
+    if (recipes.length === 0) {
+      content.innerHTML = `
+        <div class="ehrqo-empty">
+          ${searchFilter ? 'Receptų nerasta.' : 'Nėra receptų.'}
+        </div>
+      `;
+      return;
+    }
+    
+    // Render recipes as simple list
+    recipes.forEach(r => {
+      const btn = document.createElement('button');
+      btn.className = 'ehrqo-btn';
+      if (r.config.emergency) btn.classList.add('emergency');
+      btn.dataset.recipe = r.id;
       
-      if (filtered.length === 0) return;
+      // Create label with hotkey if present
+      const labelSpan = document.createElement('span');
+      labelSpan.textContent = r.label;
+      btn.appendChild(labelSpan);
       
-      // Add category header
-      const header = document.createElement('div');
-      header.className = 'ehrqo-category';
-      header.textContent = category;
-      content.appendChild(header);
+      if (r.hotkey) {
+        const hotkeySpan = document.createElement('span');
+        hotkeySpan.className = 'ehrqo-hotkey';
+        hotkeySpan.textContent = r.hotkey;
+        btn.appendChild(hotkeySpan);
+      }
       
-      // Add recipe buttons
-      const grid = document.createElement('div');
-      grid.className = 'ehrqo-grid';
-      filtered.forEach(r => {
-        const b = document.createElement('button');
-        b.className = 'ehrqo-btn';
-        b.textContent = r.label;
-        b.dataset.recipe = r.id;
-        if (r.config.emergency) b.classList.add('emergency');
-        grid.appendChild(b);
-      });
-      content.appendChild(grid);
+      content.appendChild(btn);
     });
+  }
+  
+  function renderRecipeGrid(recipes) {
+    const grid = document.createElement('div');
+    grid.className = 'ehrqo-grid';
+    
+    recipes.forEach(r => {
+      const btn = document.createElement('button');
+      btn.className = 'ehrqo-btn';
+      btn.dataset.recipe = r.id;
+      if (r.config.emergency) btn.classList.add('emergency');
+      
+      btn.innerHTML = `
+        <div>${r.label}</div>
+        <div class="ehrqo-details">
+          ${r.config.searchTerm}
+          ${r.config.dropdownText ? `<br>${r.config.dropdownText}` : ''}
+        </div>
+      `;
+      
+      grid.appendChild(btn);
+    });
+    
+    content.appendChild(grid);
   }
   
   // Initial render
   renderRecipes();
   
-  // Search handler
-  search.addEventListener('input', (e) => renderRecipes(e.target.value));
-
+  // Search handlers
+  search.addEventListener('input', (e) => {
+    renderRecipes(e.target.value);
+  });
+  
+  search.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+  
+  search.addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+  });
+  
+  // Click handler
   panel.addEventListener('click', async (e) => {
     const btn = e.target.closest('button.ehrqo-btn');
     if (!btn) return;
@@ -313,12 +492,85 @@ function injectPanel(state) {
       btn.disabled = false;
     }
   });
+  
+  // Keyboard navigation
+  panel.addEventListener('keydown', (e) => {
+    if (e.key === '/' || e.key === 'f') {
+      e.preventDefault();
+      search.focus();
+    } else if (e.target === search && e.key === 'Escape') {
+      e.preventDefault();
+      search.value = '';
+      renderRecipes('');
+    } else if (e.key === 'ArrowDown' && e.target === search) {
+      e.preventDefault();
+      const firstBtn = content.querySelector('button.ehrqo-btn');
+      if (firstBtn) firstBtn.focus();
+    } else if (e.key === 'Enter' && document.activeElement.matches('button.ehrqo-btn')) {
+      e.preventDefault();
+      document.activeElement.click();
+    } else if (document.activeElement.matches('button.ehrqo-btn')) {
+      const buttons = [...content.querySelectorAll('button.ehrqo-btn:not(:disabled)')];
+      const currentIndex = buttons.indexOf(document.activeElement);
+      let nextIndex;
+      
+      if (e.key === 'ArrowDown') {
+        nextIndex = (currentIndex + 1) % buttons.length;
+      } else if (e.key === 'ArrowUp') {
+        nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+      } else {
+        return;
+      }
+      
+      e.preventDefault();
+      buttons[nextIndex].focus();
+    }
+  });
 
   panel.querySelector('#ehrqo-min').addEventListener('click', () => {
     const list = panel.querySelector('#ehrqo-list');
     list.style.display = list.style.display === 'none' ? 'grid' : 'none';
   });
   panel.querySelector('#ehrqo-close').addEventListener('click', () => panel.remove());
+}
+
+// ---------------- Hotkey handling ----------------
+function parseHotkey(hotkeyStr) {
+  if (!hotkeyStr) return null;
+  const parts = hotkeyStr.split('+').map(p => p.trim().toLowerCase());
+  return {
+    ctrl: parts.includes('ctrl'),
+    alt: parts.includes('alt'),
+    shift: parts.includes('shift'),
+    key: parts[parts.length - 1]
+  };
+}
+
+function matchesHotkey(event, hotkey) {
+  if (!hotkey) return false;
+  const parsed = parseHotkey(hotkey);
+  return event.ctrlKey === parsed.ctrl &&
+         event.altKey === parsed.alt &&
+         event.shiftKey === parsed.shift &&
+         event.key.toLowerCase() === parsed.key;
+}
+
+function setupHotkeyListener(recipes, selectors) {
+  document.addEventListener('keydown', async (e) => {
+    // Don't trigger hotkeys when typing in input fields
+    if (e.target.matches('input, textarea')) return;
+    
+    const matchingRecipe = recipes.find(r => r.hotkey && matchesHotkey(e, r.hotkey));
+    if (matchingRecipe) {
+      e.preventDefault();
+      try {
+        await runRecipe(matchingRecipe, selectors);
+      } catch (err) {
+        console.error(err);
+        api.status(`⚠️ ${err.message}`);
+      }
+    }
+  });
 }
 
 // ---------------- Load settings then mount ----------------
@@ -335,6 +587,7 @@ async function loadState() {
   try {
     const state = await loadState();
     injectPanel(state);
+    setupHotkeyListener(state.recipes, state.selectors);
     // Re-mount on SPA changes
     const obs = new MutationObserver(() => injectPanel(state));
     obs.observe(document.documentElement, { childList: true, subtree: true });

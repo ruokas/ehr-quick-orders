@@ -1,12 +1,15 @@
 {
   "name": "ehr-quick-orders",
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "description": "Quick access and configuration for common EHR actions",
   "scripts": {
     "lint": "eslint . --ext .js,.json",
-    "lint:fix": "eslint . --ext .js,.json --fix"
+    "lint:fix": "eslint . --ext .js,.json --fix",
+    "generate-icons": "node generate-icons.js"
   },
   "devDependencies": {
     "eslint": "^8.40.0",
-    "eslint-plugin-json": "^3.1.0"
+    "eslint-plugin-json": "^3.1.0",
+    "sharp": "^0.32.6"
   }
 }

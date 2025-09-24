@@ -10,13 +10,13 @@
   color: #fff;
   border-radius: 14px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-  padding: 10px;
+  padding: 5px;
   min-width: 240px;
   max-width: 340px;
 }
 #ehrqo-card header {
   display: flex; align-items: center; justify-content: space-between;
-  font-weight: 600; font-size: 14px; letter-spacing: .2px; margin-bottom: 6px;
+  font-weight: 600; font-size: 14px; letter-spacing: .2px; margin-bottom: 4px;
 }
 #ehrqo-card header button {
   background: none; border: 0; color: #9aa0a6; cursor: pointer; font-size: 16px;
@@ -32,7 +32,7 @@
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.2);
   border-radius: 8px;
-  padding: 6px 10px;
+  padding: 4px 10px;
   color: #fff;
   width: 100%;
   font-size: 13px;
