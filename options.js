@@ -846,7 +846,7 @@ function save() {
       ehrqo_selectors: { selectors, xpaths },
       ehrqo_recipes: recipes
     }, () => {
-      setStatus('Issaugota. Perkraukite savo HIS skirtuka.', 'success');
+      setStatus('Išsaugota. Perkraukite savo HIS skirtuką.', 'success');
     });
   } catch (e) {
     setStatus(e.message, 'error', true);
@@ -922,7 +922,7 @@ function restore(e) {
       const data = JSON.parse(event.target.result);
 
       if (!data.ehrqo_selectors || !data.ehrqo_recipes) {
-        throw new Error("Neteisingas atsargines kopijos failo formatas");
+        throw new Error("Neteisingas atsarginės kopijos failo formatas");
       }
 
       validateSelectors(data.ehrqo_selectors.selectors);
@@ -1153,59 +1153,3 @@ function init() {
 
 initSelectorFields();
 init();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

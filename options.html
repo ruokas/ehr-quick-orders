@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
   <head>
     <meta charset="utf-8">
-    <title>HIS greiti veiksmai � Nustatymai</title>
+    <title>HIS greiti veiksmai – Nustatymai</title>
     <style>
       :root {
         --bg-color: #f5f7fb;
@@ -632,14 +632,14 @@
         <section class="card branding-card">
           <div>
             <h1>Greiti veiksmai</h1>
-            <p class="muted">Tvarkykite greito uzsakymo selektorius ir sablonus</p>
+            <p class="muted">Tvarkykite greito užsakymo selektorius ir šablonus</p>
           </div>
           <div class="theme-toggle">
-            <span class="muted">Isvaizda</span>
+            <span class="muted">Išvaizda</span>
             <label class="theme-switch">
               <input type="checkbox" id="themeToggle">
               <span class="switch-track"></span>
-              <span class="muted">Tamsus rezimas</span>
+              <span class="muted">Tamsus režimas</span>
             </label>
           </div>
           <div class="status-area">
@@ -651,7 +651,7 @@
           <h3>Skiltys</h3>
           <div class="nav-buttons">
             <button class="tab-button active" data-tab="selectors">Selektoriai</button>
-            <button class="tab-button" data-tab="recipes">Sablonai</button>
+            <button class="tab-button" data-tab="recipes">Šablonai</button>
             <button class="tab-button" data-tab="categories">Kategorijos</button>
           </div>
         </section>
@@ -659,8 +659,8 @@
         <section class="card actions-card">
           <h3>Greiti veiksmai</h3>
           <div class="action-group">
-            <button id="save" class="primary-btn">I�saugoti</button>
-            <button id="reset" class="secondary-btn">Atstatyti i numatytuosius</button>
+            <button id="save" class="primary-btn">Išsaugoti</button>
+            <button id="reset" class="secondary-btn">Atstatyti į numatytuosius</button>
           </div>
           <div class="action-group">
             <button id="backup" class="secondary-btn">Eksportuoti nustatymus</button>
@@ -675,7 +675,7 @@
           <div class="card">
             <div class="panel-header">
               <h2>Selektoriai</h2>
-              <p class="muted">Konfiguruokite CSS selektorius ir XKelias isreiskas naudojamas rinkiklio.</p>
+              <p class="muted">Konfigūruokite CSS selektorius ir XPath išraiškas, naudojamas rinkikliu.</p>
             </div>
 
             <div class="selector-overview">
@@ -684,7 +684,7 @@
                 <div id="defaultSelectorChips" class="chip-list"></div>
               </div>
               <div>
-                <h3>Numatytieji XKelias irasai</h3>
+                <h3>Numatytieji XPath įrašai</h3>
                 <div id="defaultXpathChips" class="chip-list"></div>
               </div>
             </div>
@@ -692,14 +692,14 @@
             <div class="card-section">
               <h3>Greita prieiga</h3>
               <div class="selector-row">
-                <label for="sel_ordersMenuBtn">Uzsakymu meniu mygtukas</label>
+                <label for="sel_ordersMenuBtn">Užsakymų meniu mygtukas</label>
                 <input type="text" id="sel_ordersMenuBtn" data-key="ordersMenuBtn">
                 <div class="selector-actions">
                   <button class="small-btn pick-selector" data-target="ordersMenuBtn">Pasirinkti</button>
                 </div>
               </div>
               <div class="selector-row">
-                <label for="sel_newOrderBtn">Naujo uzsakymo mygtukas</label>
+                <label for="sel_newOrderBtn">Naujo užsakymo mygtukas</label>
                 <input type="text" id="sel_newOrderBtn" data-key="newOrderBtn">
                 <div class="selector-actions">
                   <button class="small-btn pick-selector" data-target="newOrderBtn">Pasirinkti</button>
@@ -708,16 +708,16 @@
             </div>
 
             <div class="card-section">
-              <h3>Uzsakymo forma</h3>
+              <h3>Užsakymo forma</h3>
               <div class="selector-row">
-                <label for="sel_orderSearchInput">Paieskos laukas</label>
+                <label for="sel_orderSearchInput">Paieškos laukas</label>
                 <input type="text" id="sel_orderSearchInput" data-key="orderSearchInput">
                 <div class="selector-actions">
                   <button class="small-btn pick-selector" data-target="orderSearchInput">Pasirinkti</button>
                 </div>
               </div>
               <div class="selector-row">
-                <label for="sel_orderTextDropdown">Uzsakymo teksto sarasas</label>
+                <label for="sel_orderTextDropdown">Užsakymo teksto sąrašas</label>
                 <input type="text" id="sel_orderTextDropdown" data-key="orderTextDropdown">
                 <div class="selector-actions">
                   <button class="small-btn pick-selector" data-target="orderTextDropdown">Pasirinkti</button>
@@ -731,7 +731,7 @@
                 </div>
               </div>
               <div class="selector-row">
-                <label for="sel_emergencyCheckbox">Skubos varnele</label>
+                <label for="sel_emergencyCheckbox">Skubos varnelė</label>
                 <input type="text" id="sel_emergencyCheckbox" data-key="emergencyCheckbox">
                 <div class="selector-actions">
                   <button class="small-btn pick-selector" data-target="emergencyCheckbox">Pasirinkti</button>
@@ -755,19 +755,19 @@
 
             <div class="card-section">
               <h3>Pasirinktiniai CSS selektoriai</h3>
-              <p class="muted">Prideti papildomu selektoriu, budingu jusu diegimui.</p>
-              <div id="customCssSelektoriai" class="custom-selector-list"></div>
-              <button type="button" id="addCustomCssSelector" class="secondary-btn">Prideti CSS selektoriu</button>
+              <p class="muted">Pridėti papildomų selektorių, būdingų jūsų diegimui.</p>
+              <div id="customCssSelectors" class="custom-selector-list"></div>
+              <button type="button" id="addCustomCssSelector" class="secondary-btn">Pridėti CSS selektorių</button>
             </div>
 
             <details class="collapsible-card">
-              <summary>CSS selektoriu JSON</summary>
+              <summary>CSS selektorių JSON</summary>
               <textarea id="selectors" spellcheck="false"></textarea>
-              <p class="muted">Ispanstresniams: redaguokite selektoriu zemelapi tiesiogiai.</p>
+              <p class="muted">Išmaniesiems: redaguokite selektorių žemėlapį tiesiogiai.</p>
             </details>
 
             <div class="card-section">
-              <h3>Paieskos rezultatu XKelias</h3>
+              <h3>Paieškos rezultatų XPath</h3>
               <div class="selector-row">
                 <label for="sel_orderSearchItemContains">Rezultato zyme</label>
                 <input type="text" id="sel_orderSearchItemContains" value="li" data-key="orderSearchItemContains">
@@ -775,20 +775,20 @@
                   <button class="small-btn pick-selector" data-target="orderSearchItemContains">Pasirinkti</button>
                 </div>
               </div>
-              <p class="muted">Naudojama pasirenkamiems elementams paieskos rezultatuose nurodyti.</p>
+              <p class="muted">Naudojama pasirenkamiems elementams paieškos rezultatųose nurodyti.</p>
             </div>
 
             <div class="card-section">
-              <h3>Pasirinktiniai XKelias irasai</h3>
-              <p class="muted">Laikykite papildomu XKelias trumpiniu sudetingiems scenarijams.</p>
-              <div id="customXpathSelektoriai" class="custom-selector-list"></div>
-              <button type="button" id="addCustomXpathSelector" class="secondary-btn">Prideti XKelias selektoriu</button>
+              <h3>Pasirinktiniai XPath įrašai</h3>
+              <p class="muted">Laikykite papildomų XPath trumpinių sudėtingiems scenarijams.</p>
+              <div id="customXpathSelectors" class="custom-selector-list"></div>
+              <button type="button" id="addCustomXpathSelector" class="secondary-btn">Pridėti XPath selektorių</button>
             </div>
 
             <details class="collapsible-card">
               <summary>XKelias JSON</summary>
               <textarea id="xpaths" spellcheck="false"></textarea>
-              <p class="muted">Ispanstresniams: redaguokite XKelias apibrezimus tiesiogiai.</p>
+              <p class="muted">Išmaniesiems: redaguokite XPath apibrėžimus tiesiogiai.</p>
             </details>
           </div>
         </section>
@@ -796,14 +796,14 @@
         <section id="recipes-panel" class="tab-panel">
           <div class="card">
             <div class="panel-header">
-              <h2>Sablonai</h2>
-              <p class="muted">Kurti pakartotinai naudojamus greitu uzsakymu sablonus su is anksto uzpildytais nustatymais.</p>
+              <h2>Šablonai</h2>
+              <p class="muted">Kurti pakartotinai naudojamus greitų užsakymų šablonus su iš anksto užpildytais nustatymais.</p>
             </div>
 
             <div class="recipes-toolbar">
-              <button id="addRecipe" class="primary-btn">Prideti sablona</button>
+              <button id="addRecipe" class="primary-btn">Pridėti šabloną</button>
               <div class="recipes-filters">
-                <input type="text" id="recipeSearch" placeholder="Ieskoti sablonu...">
+                <input type="text" id="recipeSearch" placeholder="Ieškoti šablonų...">
                 <select id="categoryFilter">
                   <option value="">Visos kategorijos</option>
                 </select>
@@ -813,9 +813,9 @@
             <div id="recipesList" class="recipe-grid" aria-live="polite"></div>
 
             <details class="collapsible-card">
-              <summary>Sablonai JSON</summary>
+              <summary>Šablonai JSON</summary>
               <textarea id="recipes" spellcheck="false"></textarea>
-              <p class="muted">Ispanstresniams: redaguokite sablonu masyva rankiniu budu.</p>
+              <p class="muted">Išmaniesiems: redaguokite šablonų masyvą rankiniu būdu.</p>
             </details>
           </div>
         </section>
@@ -824,15 +824,15 @@
           <div class="card">
             <div class="panel-header">
               <h2>Kategorijos</h2>
-              <p class="muted">Grupuokite sablonus i patogias kolekcijas.</p>
+              <p class="muted">Grupuokite šablonus į patogias kolekcijas.</p>
             </div>
 
             <div class="category-layout">
               <div>
                 <div class="tree-toolbar">
-                  <button id="addRootCategory" class="secondary-btn">Prideti pagrindine kategorija</button>
-                  <button id="addSubCategory" class="secondary-btn" disabled>Prideti pokategorija</button>
-                  <button id="deleteCategory" class="secondary-btn danger" disabled>Pasalinti</button>
+                  <button id="addRootCategory" class="secondary-btn">Pridėti pagrindinę kategoriją</button>
+                  <button id="addSubCategory" class="secondary-btn" disabled>Pridėti subkategoriją</button>
+                  <button id="deleteCategory" class="secondary-btn danger" disabled>Pašalinti</button>
                 </div>
                 <div id="categoryTree" class="tree-container"></div>
               </div>
@@ -840,12 +840,12 @@
               <div class="card-section" id="categoryEditor">
                 <h3>Kategorijos informacija</h3>
                 <div class="form-group">
-                  <label for="categoryPavadinimas">Pavadinimas</label>
-                  <input type="text" id="categoryPavadinimas" disabled>
+                  <label for="categoryName">Pavadinimas</label>
+                  <input type="text" id="categoryName" disabled>
                 </div>
                 <div class="form-group">
-                  <label for="categoryKelias">Kelias</label>
-                  <input type="text" id="categoryKelias" disabled>
+                  <label for="categoryPath">Kelias</label>
+                  <input type="text" id="categoryPath" disabled>
                 </div>
                 <div class="form-group">
                   <label for="categoryOrder">Rodymo tvarka</label>
@@ -860,27 +860,27 @@
 
     <div id="recipeModal" class="modal-backdrop" aria-modal="true" role="dialog">
       <div class="modal-card">
-        <h3 id="recipeModalTitle">Prideti sablona</h3>
+        <h3 id="recipeModalTitle">Pridėti šabloną</h3>
         <form id="recipeForm">
           <div class="form-group">
             <label for="recipeId">ID</label>
             <input type="text" id="recipeId" required placeholder="e.g., ct_head_stroke">
           </div>
           <div class="form-group">
-            <label for="recipePavadinimas">Pavadinimas</label>
-            <input type="text" id="recipePavadinimas" required placeholder="e.g., CT Head � Stroke Protocol">
+            <label for="recipeLabel">Pavadinimas</label>
+            <input type="text" id="recipeLabel" required placeholder="e.g., CT Head – Stroke Protocol">
           </div>
           <div class="form-group">
             <label for="recipeCategory">Category</label>
             <select id="recipeCategory" required></select>
           </div>
           <div class="form-group">
-            <label for="recipeSearchTerm">Paieskos fraze</label>
-            <input type="text" id="recipeSearchTerm" required placeholder="Paieskos fraze to find the order">
+            <label for="recipeSearchTerm">Paieškos frazę</label>
+            <input type="text" id="recipeSearchTerm" required placeholder="Paieškos frazė, padedanti rasti užsakymą">
           </div>
           <div class="form-group">
-            <label for="recipeDropdownText">Saraso tekstas (pasirinktinai)</label>
-            <input type="text" id="recipeDropdownText" placeholder="Tekstas, kuri reikia pasirinkti sarase">
+            <label for="recipeDropdownText">Sąrašo tekstas (pasirinktinai)</label>
+            <input type="text" id="recipeDropdownText" placeholder="Tekstas, kurį reikia pasirinkti sąraše">
           </div>
           <div class="form-group">
             <label for="recipeRoom">Kambarys (pasirinktinai)</label>
@@ -889,17 +889,17 @@
           <div class="form-group">
             <label>
               <input type="checkbox" id="recipeEmergency">
-              Skubus uzsakymas
+              Skubus užsakymas
             </label>
           </div>
           <div class="form-group">
-            <label for="recipeHotkey">Spartusis klavisas (pasirinktinai)</label>
+            <label for="recipeHotkey">Spartusis klavišas (pasirinktinai)</label>
             <input type="text" id="recipeHotkey" placeholder="e.g., Ctrl+1, Alt+S">
-            <p class="muted">Formatas: Ctrl/Alt/Shift + klavisas (pvz., Ctrl+1, Alt+S)</p>
+            <p class="muted">Formatas: Ctrl/Alt/Shift + klavišas (pvz., Ctrl+1, Alt+S)</p>
           </div>
           <div class="modal-actions">
-            <button type="button" id="recipeAtsaukti" class="secondary-btn">Atsaukti</button>
-            <button type="submit" id="recipeIssaugoti" class="primary-btn">Issaugoti</button>
+            <button type="button" id="recipeCancel" class="secondary-btn">Atšaukti</button>
+            <button type="submit" id="recipeIssaugoti" class="primary-btn">Išsaugoti</button>
           </div>
         </form>
       </div>
@@ -909,4 +909,5 @@
     <script src="options.js"></script>
   </body>
 </html>
+
 
