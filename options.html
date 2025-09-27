@@ -624,6 +624,122 @@
           flex-direction: column;
         }
       }
+      .recipe-action-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .recipe-action {
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 12px;
+        background: rgba(148, 163, 184, 0.08);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .recipe-action-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .recipe-action-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .recipe-action-index {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--muted-color);
+      }
+      .action-type-select {
+        min-width: 200px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--card-bg);
+        color: var(--text-color);
+      }
+      .recipe-action-controls {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .recipe-action-body {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .action-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .action-field-inline {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+      }
+      .action-field input,
+      .action-field select,
+      .action-field textarea {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--card-bg);
+        color: var(--text-color);
+        font-size: 14px;
+      }
+      .action-field textarea {
+        resize: vertical;
+      }
+      .action-field-inline input[type="checkbox"] {
+        width: auto;
+      }
+      .action-selector-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .action-selector-row select {
+        min-width: 180px;
+      }
+      .action-flags {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        font-size: 13px;
+      }
+      .action-flag {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .action-checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .recipe-actions-toolbar {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+      }
+      .small-btn.ghost {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+      }
+      .small-btn.ghost:hover {
+        border-color: var(--primary-color);
+      }
+
     </style>
   </head>
   <body>
@@ -695,6 +811,7 @@
                 <label for="sel_ordersMenuBtn">Užsakymų meniu mygtukas</label>
                 <input type="text" id="sel_ordersMenuBtn" data-key="ordersMenuBtn">
                 <div class="selector-actions">
+                  <button class="small-btn ghost test-selector" data-target="ordersMenuBtn" data-kind="css">Test</button>
                   <button class="small-btn pick-selector" data-target="ordersMenuBtn">Pasirinkti</button>
                 </div>
               </div>
@@ -702,6 +819,7 @@
                 <label for="sel_newOrderBtn">Naujo užsakymo mygtukas</label>
                 <input type="text" id="sel_newOrderBtn" data-key="newOrderBtn">
                 <div class="selector-actions">
+                  <button class="small-btn ghost test-selector" data-target="newOrderBtn" data-kind="css">Test</button>
                   <button class="small-btn pick-selector" data-target="newOrderBtn">Pasirinkti</button>
                 </div>
               </div>
@@ -713,6 +831,7 @@
                 <label for="sel_orderSearchInput">Paieškos laukas</label>
                 <input type="text" id="sel_orderSearchInput" data-key="orderSearchInput">
                 <div class="selector-actions">
+                  <button class="small-btn ghost test-selector" data-target="orderSearchInput" data-kind="css">Test</button>
                   <button class="small-btn pick-selector" data-target="orderSearchInput">Pasirinkti</button>
                 </div>
               </div>
@@ -720,6 +839,7 @@
                 <label for="sel_orderTextDropdown">Užsakymo teksto sąrašas</label>
                 <input type="text" id="sel_orderTextDropdown" data-key="orderTextDropdown">
                 <div class="selector-actions">
+                  <button class="small-btn ghost test-selector" data-target="orderTextDropdown" data-kind="css">Test</button>
                   <button class="small-btn pick-selector" data-target="orderTextDropdown">Pasirinkti</button>
                 </div>
               </div>
@@ -727,6 +847,7 @@
                 <label for="sel_roomInput">Kambario laukas</label>
                 <input type="text" id="sel_roomInput" data-key="roomInput">
                 <div class="selector-actions">
+                  <button class="small-btn ghost test-selector" data-target="roomInput" data-kind="css">Test</button>
                   <button class="small-btn pick-selector" data-target="roomInput">Pasirinkti</button>
                 </div>
               </div>
@@ -734,6 +855,7 @@
                 <label for="sel_emergencyCheckbox">Skubos varnelė</label>
                 <input type="text" id="sel_emergencyCheckbox" data-key="emergencyCheckbox">
                 <div class="selector-actions">
+                  <button class="small-btn ghost test-selector" data-target="emergencyCheckbox" data-kind="css">Test</button>
                   <button class="small-btn pick-selector" data-target="emergencyCheckbox">Pasirinkti</button>
                 </div>
               </div>
@@ -741,6 +863,7 @@
                 <label for="sel_submitBtn">Pateikimo mygtukas</label>
                 <input type="text" id="sel_submitBtn" data-key="submitBtn">
                 <div class="selector-actions">
+                  <button class="small-btn ghost test-selector" data-target="submitBtn" data-kind="css">Test</button>
                   <button class="small-btn pick-selector" data-target="submitBtn">Pasirinkti</button>
                 </div>
               </div>
@@ -748,6 +871,7 @@
                 <label for="sel_modalRoot">Modalo konteineris</label>
                 <input type="text" id="sel_modalRoot" data-key="modalRoot">
                 <div class="selector-actions">
+                  <button class="small-btn ghost test-selector" data-target="modalRoot" data-kind="css">Test</button>
                   <button class="small-btn pick-selector" data-target="modalRoot">Pasirinkti</button>
                 </div>
               </div>
@@ -772,6 +896,7 @@
                 <label for="sel_orderSearchItemContains">Rezultato zyme</label>
                 <input type="text" id="sel_orderSearchItemContains" value="li" data-key="orderSearchItemContains">
                 <div class="selector-actions">
+                  <button class="small-btn ghost test-selector" data-target="orderSearchItemContains" data-kind="xpath">Test</button>
                   <button class="small-btn pick-selector" data-target="orderSearchItemContains">Pasirinkti</button>
                 </div>
               </div>
@@ -875,22 +1000,13 @@
             <select id="recipeCategory" required></select>
           </div>
           <div class="form-group">
-            <label for="recipeSearchTerm">Paieškos frazę</label>
-            <input type="text" id="recipeSearchTerm" required placeholder="Paieškos frazė, padedanti rasti užsakymą">
-          </div>
-          <div class="form-group">
-            <label for="recipeDropdownText">Sąrašo tekstas (pasirinktinai)</label>
-            <input type="text" id="recipeDropdownText" placeholder="Tekstas, kurį reikia pasirinkti sąraše">
-          </div>
-          <div class="form-group">
-            <label for="recipeRoom">Kambarys (pasirinktinai)</label>
-            <input type="text" id="recipeRoom" placeholder="Kambario numeris">
-          </div>
-          <div class="form-group">
-            <label>
-              <input type="checkbox" id="recipeEmergency">
-              Skubus užsakymas
-            </label>
+            <label>Veiksmų seka</label>
+            <p class="muted">Pridėti žingsnius, kuriuos turi atlikti šis šablonas. Naudokite mygtukus veiksmo pridėjimui arba sugeneruokite numatytą seką.</p>
+            <div id="recipeActionsContainer" class="recipe-action-list"></div>
+            <div class="recipe-actions-toolbar">
+              <button type="button" id="addRecipeAction" class="small-btn">Pridėti veiksmą</button>
+              <button type="button" id="addDefaultRecipeFlow" class="small-btn ghost">Įkelti numatytą seką</button>
+            </div>
           </div>
           <div class="form-group">
             <label for="recipeHotkey">Spartusis klavišas (pasirinktinai)</label>
@@ -909,5 +1025,3 @@
     <script src="options.js"></script>
   </body>
 </html>
-
-

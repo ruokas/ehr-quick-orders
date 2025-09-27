@@ -1,4 +1,4 @@
-// Greiti veiksmai – content script
+// Greiti veiksmai - content script
 // Tip: Adjust host_permissions/matches in manifest.json to your EHR domain.
 // Then update selectors below (Options page lets you edit too).
 
@@ -36,11 +36,11 @@ const DEFAULT_CATEGORIES = {
   }
 };
 
-// Example recipes – edit in Options page
+// Example recipes - edit in Options page
 const DEFAULT_RECIPES = [
   {
     id: 'ct_head_stroke',
-    label: 'Head CT – stroke',
+    label: 'Head CT - stroke',
     category: 'Imaging/Neuro',
     config: { 
       searchTerm: 'Head CT',
@@ -53,7 +53,7 @@ const DEFAULT_RECIPES = [
   },
   {
     id: 'ct_head_trauma',
-    label: 'Head CT – trauma',
+    label: 'Head CT - trauma',
     category: 'Imaging/Neuro',
     config: {
       searchTerm: 'Head CT',
@@ -65,7 +65,7 @@ const DEFAULT_RECIPES = [
   },
   {
     id: 'cxr_pa_lat',
-    label: 'Chest X‑ray – PA/LAT',
+    label: 'Chest X-ray - PA/LAT',
     category: 'Imaging/Chest',
     config: {
       searchTerm: 'Chest X-ray',
@@ -77,7 +77,7 @@ const DEFAULT_RECIPES = [
   },
   {
     id: 'cxr_portable',
-    label: 'Chest X-ray – portable',
+    label: 'Chest X-ray - portable',
     category: 'Imaging/Chest',
     config: {
       searchTerm: 'Chest X-ray',
@@ -92,6 +92,327 @@ const DEFAULT_RECIPES = [
 // ---------------- Utilities ----------------
 const $q = (sel, root = document) => root.querySelector(sel);
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+let ehrqoState = null;
+
+function hasAdvancedSteps(recipe) {
+  return Array.isArray(recipe?.steps) && recipe.steps.length > 0;
+}
+
+function deriveRecipeDisplayConfig(recipe) {
+  const base = {
+    searchTerm: '',
+    dropdownText: '',
+    room: '',
+    emergency: undefined
+  };
+
+  if (!recipe || typeof recipe !== 'object') {
+    return base;
+  }
+
+  if (recipe.config && typeof recipe.config === 'object') {
+    if (typeof recipe.config.searchTerm === 'string') base.searchTerm = recipe.config.searchTerm;
+    if (typeof recipe.config.dropdownText === 'string') base.dropdownText = recipe.config.dropdownText;
+    if (typeof recipe.config.room === 'string') base.room = recipe.config.room;
+    if (typeof recipe.config.emergency === 'boolean') base.emergency = recipe.config.emergency;
+  }
+
+  if (hasAdvancedSteps(recipe)) {
+    for (const step of recipe.steps) {
+      if (!step || typeof step !== 'object') continue;
+      const selectorKey = step.selectorKey || '';
+      switch (step.type) {
+        case 'setValue':
+          if (selectorKey === 'orderSearchInput' && typeof step.value === 'string') {
+            base.searchTerm = step.value;
+          } else if (selectorKey === 'roomInput' && typeof step.value === 'string') {
+            base.room = step.value;
+          }
+          break;
+        case 'selectOption':
+          if (selectorKey === 'orderTextDropdown' && typeof step.value === 'string') {
+            base.dropdownText = step.value;
+          }
+          break;
+        case 'setChecked':
+          if (selectorKey === 'emergencyCheckbox' && typeof step.checked === 'boolean') {
+            base.emergency = step.checked;
+          }
+          break;
+        case 'clickText':
+          if (!base.dropdownText && typeof step.text === 'string') {
+            base.dropdownText = step.text;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  return base;
+}
+
+function ensureHighlightStyles() {
+  if (document.getElementById('ehrqo-highlight-style')) {
+    return;
+  }
+  const style = document.createElement('style');
+  style.id = 'ehrqo-highlight-style';
+  style.textContent = `
+    .ehrqo-highlight {
+      outline: 2px solid #22c55e !important;
+      outline-offset: 1px !important;
+      scroll-margin: 120px;
+    }
+  `;
+  document.head.appendChild(style);
+}
+function highlightElement(el, duration = 1600) {
+  if (!el) return;
+  ensureHighlightStyles();
+  el.classList.add('ehrqo-highlight');
+  try {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch (_) {
+    el.scrollIntoView();
+  }
+  setTimeout(() => {
+    el.classList.remove('ehrqo-highlight');
+  }, duration);
+}
+
+function resolveSelectorString(action, selectors) {
+  if (!action) return '';
+  const direct = (action.selector || '').trim();
+  if (direct) return direct;
+  const key = (action.selectorKey || '').trim();
+  if (!key) return '';
+  const value = selectors?.selectors?.[key];
+  return typeof value === 'string' ? value : '';
+}
+
+function resolveXPathBase(action, selectors) {
+  if (!action) return '';
+  const direct = (action.xpath || '').trim();
+  if (direct) return direct;
+  const key = (action.xpathKey || '').trim();
+  if (!key) return '';
+  const value = selectors?.xpaths?.[key];
+  return typeof value === 'string' ? value : '';
+}
+
+function isActionEffectivelyEmpty(action) {
+  if (!action) return true;
+  if (action.type === 'setValue' || action.type === 'selectOption') {
+    return !(action.value && String(action.value).trim());
+  }
+  if (action.type === 'clickText') {
+    return !(action.text && String(action.text).trim());
+  }
+  return false;
+}
+
+function normalizeTimeout(value, fallback = 8000) {
+  const num = Number(value);
+  return Number.isFinite(num) && num >= 0 ? num : fallback;
+}
+
+function buildContainsXPath(base, text) {
+  const fragment = (base || '').trim() || '*';
+  const literal = String(text ?? '').replace(/"/g, '\"');
+  const prefixed = fragment.startsWith('/') || fragment.startsWith('(') ? fragment : `//${fragment}`;
+  if (prefixed.includes('contains(')) {
+    return prefixed;
+  }
+  return `${prefixed}[contains(., "${literal}")]`;
+}
+
+
+async function executeAction(action, selectors, options = {}) {
+  if (!action || typeof action !== 'object') {
+    throw new Error('Invalid action definition');
+  }
+
+  const preview = options.preview === true;
+  if (action.skipIfEmpty && isActionEffectivelyEmpty(action)) {
+    return { skipped: true };
+  }
+
+  switch (action.type) {
+    case 'status': {
+      if (!preview) {
+        await api.status(action.text || '');
+      }
+      return { matchedCount: 0 };
+    }
+    case 'delay': {
+      if (!preview) {
+        const delay = normalizeTimeout(action.timeout ?? action.delay ?? 0, 0);
+        await sleep(delay);
+      }
+      return { matchedCount: 0 };
+    }
+    case 'waitFor': {
+      const selector = resolveSelectorString(action, selectors);
+      if (!selector) {
+        throw new Error('waitFor action requires a selector');
+      }
+      if (preview) {
+        const matches = document.querySelectorAll(selector);
+        if (!matches.length) {
+          throw new Error(`Element not found for selector ${selector}`);
+        }
+        highlightElement(matches[0]);
+        return { matchedCount: matches.length, selector };
+      }
+      await api.waitFor(selector, normalizeTimeout(action.timeout, 8000));
+      return { matchedCount: 1, selector };
+    }
+    case 'click': {
+      const selector = resolveSelectorString(action, selectors);
+      if (!selector) {
+        throw new Error('click action requires a selector');
+      }
+      if (preview) {
+        const matches = document.querySelectorAll(selector);
+        if (!matches.length) {
+          throw new Error(`Element not found for selector ${selector}`);
+        }
+        highlightElement(matches[0]);
+        return { matchedCount: matches.length, selector };
+      }
+      await api.safeClick(selector);
+      return { matchedCount: 1, selector };
+    }
+    case 'setValue': {
+      const selector = resolveSelectorString(action, selectors);
+      if (!selector) {
+        throw new Error('setValue action requires a selector');
+      }
+      const value = action.value != null ? String(action.value) : '';
+      if (preview) {
+        const matches = document.querySelectorAll(selector);
+        if (!matches.length) {
+          throw new Error(`Element not found for selector ${selector}`);
+        }
+        highlightElement(matches[0]);
+        return { matchedCount: matches.length, selector, value };
+      }
+      await api.setValue(selector, value);
+      return { matchedCount: 1, selector, value };
+    }
+    case 'selectOption': {
+      const selector = resolveSelectorString(action, selectors);
+      if (!selector) {
+        throw new Error('selectOption action requires a selector');
+      }
+      const value = action.value != null ? String(action.value) : '';
+      const match = (action.optionMatch || 'text').toLowerCase();
+      if (preview) {
+        const el = document.querySelector(selector);
+        if (!el) {
+          throw new Error(`Element not found for selector ${selector}`);
+        }
+        highlightElement(el);
+        return { matchedCount: el.options ? el.options.length : 0, selector, value };
+      }
+      const el = await api.waitFor(selector, normalizeTimeout(action.timeout, 8000));
+      if (match === 'value') {
+        const option = Array.from(el.options || []).find(o => o.value === value);
+        if (!option) {
+          throw new Error(`Option value '${value}' not found`);
+        }
+        el.value = option.value;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        await sleep(100);
+      } else {
+        await api.selectByVisibleText(selector, value);
+      }
+      return { matchedCount: 1, selector, value };
+    }
+    case 'setChecked': {
+      const selector = resolveSelectorString(action, selectors);
+      if (!selector) {
+        throw new Error('setChecked action requires a selector');
+      }
+      const checked = !!action.checked;
+      if (preview) {
+        const el = document.querySelector(selector);
+        if (!el) {
+          throw new Error(`Element not found for selector ${selector}`);
+        }
+        highlightElement(el);
+        return { matchedCount: 1, selector, checked, current: !!el.checked };
+      }
+      await api.setChecked(selector, checked);
+      return { matchedCount: 1, selector, checked };
+    }
+    case 'clickText': {
+      const base = resolveXPathBase(action, selectors) || selectors?.xpaths?.orderSearchItemContains;
+      const textValue = action.text != null ? String(action.text) : '';
+      if (!textValue.trim()) {
+        throw new Error('clickText action requires the text to search');
+      }
+      if (preview) {
+        const xpath = buildContainsXPath(base, textValue);
+        const snapshot = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+        const count = snapshot.snapshotLength;
+        if (!count) {
+          throw new Error(`XPath element not found for text '${textValue}'`);
+        }
+        highlightElement(snapshot.snapshotItem(0));
+        return { matchedCount: count, xpath };
+      }
+      await api.clickXPathContains(textValue, { base, timeout: normalizeTimeout(action.timeout, 8000) });
+      return { matchedCount: 1, text: textValue };
+    }
+    case 'highlight': {
+      const selector = resolveSelectorString(action, selectors);
+      if (!selector) {
+        throw new Error('highlight action requires a selector');
+      }
+      const matches = document.querySelectorAll(selector);
+      if (!matches.length) {
+        throw new Error(`Element not found for selector ${selector}`);
+      }
+      highlightElement(matches[0]);
+      return { matchedCount: matches.length, selector };
+    }
+    default:
+      throw new Error(`Unsupported action type: ${action.type}`);
+  }
+}
+
+async function runAdvancedRecipe(recipe, selectors) {
+  const steps = Array.isArray(recipe?.steps) ? recipe.steps : [];
+  for (const action of steps) {
+    try {
+      await executeAction(action, selectors, { preview: false });
+    } catch (error) {
+      if (action && action.allowFailure) {
+        console.warn('[ehrqo] Action failed but is marked optional', action, error);
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
+async function runAdvancedRecipe(recipe, selectors) {
+  const steps = Array.isArray(recipe?.steps) ? recipe.steps : [];
+  for (const action of steps) {
+    try {
+      await executeAction(action, selectors, { preview: false });
+    } catch (error) {
+      if (action && action.allowFailure) {
+        console.warn('[ehrqo] Action failed but is marked optional', action, error);
+        continue;
+      }
+      throw error;
+    }
+  }
+}
 
 function isVisible(el) {
   if (!el) return false;
@@ -114,25 +435,58 @@ const api = {
       if (el && isVisible(el)) return el;
       await sleep(100);
     }
-    throw new Error(`Baigėsi laukimo laikas ${sel}`);
+    throw new Error(`Baigesi laukimo laikas ${sel}`);
   },
-  async waitForXPathContains(text, timeout = 8000) {
-    const start = performance.now();
-    const xpath = `//${this.xpaths.orderSearchItemContains}[contains(., "${text.replace(/"/g,'\\"')}")]`;
-    while (performance.now() - start < timeout) {
-      const it = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-      const el = it.singleNodeValue;
-      if (el && isVisible(el)) return el;
-      await sleep(100);
+  async waitForXPathContains(text, options = {}) {
+
+    let timeout = 8000;
+
+    let base = this.xpaths.orderSearchItemContains;
+
+    if (typeof options === 'number') {
+
+      timeout = options;
+
+    } else if (options && typeof options === 'object') {
+
+      timeout = options.timeout ?? timeout;
+
+      if (options.base) {
+
+        base = options.base;
+
+      }
+
     }
-    throw new Error(`Baigėsi laukimo laikas ${text}`);
+
+    const xpath = buildContainsXPath(base, text);
+
+    const start = performance.now();
+
+    while (performance.now() - start < timeout) {
+
+      const it = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+
+      const el = it.singleNodeValue;
+
+      if (el && isVisible(el)) return el;
+
+      await sleep(100);
+
+    }
+
+    throw new Error(`Baigesi laukimo laikas ${text}`);
+
   },
-  async click(el) { el.click(); await sleep(120); },
-  async safeClick(sel) { const el = await this.waitFor(sel); await this.click(el); },
-  async clickXPathContains(text) {
-    const el = await this.waitForXPathContains(text);
+
+  async clickXPathContains(text, options = {}) {
+
+    const el = await this.waitForXPathContains(text, options);
+
     el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
     await sleep(100);
+
   },
   async setValue(sel, value) {
     const el = await this.waitFor(sel);
@@ -158,39 +512,57 @@ const api = {
 };
 
 // ---------------- Automation runner ----------------
-async function runRecipe(recipe, selectors) {
+async function runLegacyRecipe(recipe, selectors) {
   const { searchTerm, dropdownText, room, emergency } = recipe.config || {};
   api.selectors = selectors.selectors;
   api.xpaths = selectors.xpaths;
 
-  await api.status('Atidaromi užsakymai…');
+  await api.status('Atidaromi užsakymai...');
   await api.safeClick(api.selectors.ordersMenuBtn);
   await api.safeClick(api.selectors.newOrderBtn);
-  // modal optional – ignore errors
+  // modal optional - ignore errors
   try { await api.waitFor(api.selectors.modalRoot, 6000); } catch (_) {}
 
-  await api.status(`Pasirenkama ${searchTerm}…`);
+  await api.status(`Pasirenkama ${searchTerm}...`);
   await api.setValue(api.selectors.orderSearchInput, searchTerm);
   await api.clickXPathContains(searchTerm);
 
   if (dropdownText) {
-    await api.status('Nustatomas užsakymo tekstas…');
+    await api.status('Nustatomas užsakymo tekstas...');
     await api.selectByVisibleText(api.selectors.orderTextDropdown, dropdownText);
   }
   if (room) {
-    await api.status('Kambarys…');
+    await api.status('Kambarys...');
     await api.setValue(api.selectors.roomInput, room);
   }
   if (typeof emergency === 'boolean') {
-    await api.status('Prioritetas…');
+    await api.status('Prioritetas...');
     await api.setChecked(api.selectors.emergencyCheckbox, emergency);
   }
 
-  await api.status('Pateikiama…');
+  await api.status('Pateikiama...');
   await api.safeClick(api.selectors.submitBtn);
-  await api.status('Baigta ✅');
+  await api.status('Baigta.');
 }
 
+
+async function runRecipe(recipe, selectors) {
+
+  api.selectors = selectors.selectors;
+
+  api.xpaths = selectors.xpaths;
+
+  if (hasAdvancedSteps(recipe)) {
+
+    await runAdvancedRecipe(recipe, selectors);
+
+  } else {
+
+    await runLegacyRecipe(recipe, selectors);
+
+  }
+
+}
 // ---------------- UI injection ----------------
 function injectPanel(state) {
   if (document.getElementById('ehrqo-panel')) return;
@@ -349,8 +721,8 @@ function injectPanel(state) {
       <header>
         <span>Greiti veiksmai</span>
         <div>
-          <button id="ehrqo-min" title="Minimize">—</button>
-          <button id="ehrqo-close" title="Hide">✕</button>
+          <button id="ehrqo-min" title="Minimize">–</button>
+          <button id="ehrqo-close" title="Hide">×</button>
         </div>
       </header>
       <div id="ehrqo-list">
@@ -392,73 +764,75 @@ function injectPanel(state) {
   function renderRecipes(searchFilter = '') {
     content.innerHTML = '';
     const lFilter = searchFilter.toLowerCase();
-    
-    // Filter recipes
+
     let recipes = state.recipes;
     if (searchFilter) {
-      recipes = recipes.filter(r => 
-        r.label.toLowerCase().includes(lFilter) ||
-        r.config.searchTerm.toLowerCase().includes(lFilter)
-      );
+      recipes = recipes.filter(r => {
+        const display = deriveRecipeDisplayConfig(r);
+        const combined = `${r.label} ${r.category || ''} ${display.searchTerm || ''} ${display.dropdownText || ''}`.toLowerCase();
+        return combined.includes(lFilter);
+      });
     }
-    
-    // No results message
+
     if (recipes.length === 0) {
       content.innerHTML = `
         <div class="ehrqo-empty">
-          ${searchFilter ? 'Receptų nerasta.' : 'Nėra receptų.'}
+          ${searchFilter ? 'Receptu nerasta.' : 'Nera receptu.'}
         </div>
       `;
       return;
     }
-    
-    // Render recipes as simple list
+
     recipes.forEach(r => {
       const btn = document.createElement('button');
       btn.className = 'ehrqo-btn';
-      if (r.config.emergency) btn.classList.add('emergency');
+      const display = deriveRecipeDisplayConfig(r);
+      if (display.emergency) btn.classList.add('emergency');
       btn.dataset.recipe = r.id;
-      
-      // Create label with hotkey if present
+
       const labelSpan = document.createElement('span');
       labelSpan.textContent = r.label;
       btn.appendChild(labelSpan);
-      
+
       if (r.hotkey) {
         const hotkeySpan = document.createElement('span');
         hotkeySpan.className = 'ehrqo-hotkey';
         hotkeySpan.textContent = r.hotkey;
         btn.appendChild(hotkeySpan);
       }
-      
+
       content.appendChild(btn);
     });
   }
-  
+
   function renderRecipeGrid(recipes) {
     const grid = document.createElement('div');
     grid.className = 'ehrqo-grid';
-    
+
     recipes.forEach(r => {
+      const display = deriveRecipeDisplayConfig(r);
       const btn = document.createElement('button');
       btn.className = 'ehrqo-btn';
       btn.dataset.recipe = r.id;
-      if (r.config.emergency) btn.classList.add('emergency');
-      
+      if (display.emergency) btn.classList.add('emergency');
+
+      const searchText = (display.searchTerm || '').trim();
+      const dropdownText = display.dropdownText || '';
+
       btn.innerHTML = `
         <div>${r.label}</div>
         <div class="ehrqo-details">
-          ${r.config.searchTerm}
-          ${r.config.dropdownText ? `<br>${r.config.dropdownText}` : ''}
+          ${searchText}
+          ${dropdownText ? `<br>${dropdownText}` : ''}
         </div>
       `;
-      
+
       grid.appendChild(btn);
     });
-    
+
     content.appendChild(grid);
   }
-  
+
   // Initial render
   renderRecipes();
   
@@ -487,7 +861,7 @@ function injectPanel(state) {
       await runRecipe(recipe, state.selectors);
     } catch (err) {
       console.error(err);
-      api.status(`⚠️ ${err.message}`);
+      api.status(`[!] ${err.message}`);
     } finally {
       btn.disabled = false;
     }
@@ -555,6 +929,41 @@ function matchesHotkey(event, hotkey) {
          event.key.toLowerCase() === parsed.key;
 }
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (!message || typeof message !== 'object') {
+    return;
+  }
+
+  if (message.type === 'ehrqo-run-action') {
+    const selectors = ehrqoState?.selectors || { selectors: DEFAULT_SELECTORS, xpaths: DEFAULT_XPATHS };
+    (async () => {
+      try {
+        const result = await executeAction(message.action, selectors, { preview: !!message.preview });
+        sendResponse({ ok: true, result });
+      } catch (error) {
+        sendResponse({ ok: false, error: error.message || String(error) });
+      }
+    })();
+    return true;
+  }
+
+  if (message.type === 'ehrqo-run-actions') {
+    const selectors = ehrqoState?.selectors || { selectors: DEFAULT_SELECTORS, xpaths: DEFAULT_XPATHS };
+    const actions = Array.isArray(message.actions) ? message.actions : [];
+    (async () => {
+      try {
+        for (const action of actions) {
+          await executeAction(action, selectors, { preview: !!message.preview });
+        }
+        sendResponse({ ok: true });
+      } catch (error) {
+        sendResponse({ ok: false, error: error.message || String(error) });
+      }
+    })();
+    return true;
+  }
+});
+
 function setupHotkeyListener(recipes, selectors) {
   document.addEventListener('keydown', async (e) => {
     // Don't trigger hotkeys when typing in input fields
@@ -567,7 +976,7 @@ function setupHotkeyListener(recipes, selectors) {
         await runRecipe(matchingRecipe, selectors);
       } catch (err) {
         console.error(err);
-        api.status(`⚠️ ${err.message}`);
+        api.status(`[!] ${err.message}`);
       }
     }
   });
@@ -586,13 +995,20 @@ async function loadState() {
 (async function main(){
   try {
     const state = await loadState();
+    ehrqoState = state;
     injectPanel(state);
     setupHotkeyListener(state.recipes, state.selectors);
     // Re-mount on SPA changes
     const obs = new MutationObserver(() => injectPanel(state));
     obs.observe(document.documentElement, { childList: true, subtree: true });
-    console.log('[HIS greiti veiksmai] įkrautas');
+    console.log('[HIS greiti veiksmai] ikrautas');
   } catch (e) {
     console.error('[HIS greiti veiksmai] init error', e);
   }
 })();
+
+
+
+
+
+
