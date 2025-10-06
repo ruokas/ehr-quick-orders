@@ -1466,15 +1466,23 @@ async function startSelectorPicker(targetField) {
   };
 
   try {
-    await sendMessage(targetTab.id);
+    const response = await sendMessage(targetTab.id);
+    if (response && response.success === false) {
+      throw new Error(response.error || 'Nepavyko paleisti selektoriaus rinkiklio.');
+    }
   } catch (error) {
-    if (error.message.includes('Receiving end does not exist')) {
+    const missingReceiver = error.message.includes('Receiving end does not exist');
+    const portClosed = error.message.includes('The message port closed before a response was received.');
+    if (missingReceiver || portClosed) {
       try {
         await chrome.scripting.executeScript({
           target: { tabId: targetTab.id, allFrames: true },
           files: ['selector-picker.js']
         });
-        await sendMessage(targetTab.id);
+        const retryResponse = await sendMessage(targetTab.id);
+        if (retryResponse && retryResponse.success === false) {
+          throw new Error(retryResponse.error || 'Nepavyko paleisti selektoriaus rinkiklio.');
+        }
         return;
       } catch (injectError) {
         handleFailure(injectError);
