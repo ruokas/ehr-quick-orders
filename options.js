@@ -48,6 +48,57 @@ function deepClone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function isPlainObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isLikelyXPathEntry(key, value) {
+  if (DEFAULT_XPATH_KEYS.includes(key)) return true;
+  if (typeof key === 'string' && key.toLowerCase().includes('xpath')) {
+    return true;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed.startsWith('//') || trimmed.startsWith('.//') || trimmed.startsWith('(')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function normalizeStoredSelectors(raw) {
+  const selectors = { ...DEFAULT_SELECTORS.selectors };
+  const xpaths = { ...DEFAULT_SELECTORS.xpaths };
+
+  if (!isPlainObject(raw)) {
+    return { selectors, xpaths };
+  }
+
+  const hasNestedSelectors = isPlainObject(raw.selectors);
+  const hasNestedXpaths = isPlainObject(raw.xpaths);
+
+  if (hasNestedSelectors || hasNestedXpaths) {
+    if (hasNestedSelectors) {
+      Object.assign(selectors, raw.selectors);
+    }
+    if (hasNestedXpaths) {
+      Object.assign(xpaths, raw.xpaths);
+    }
+    return { selectors, xpaths };
+  }
+
+  Object.entries(raw).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    if (isLikelyXPathEntry(key, value)) {
+      xpaths[key] = value;
+    } else {
+      selectors[key] = value;
+    }
+  });
+
+  return { selectors, xpaths };
+}
+
 
 
 
@@ -1820,10 +1871,15 @@ function restore(e) {
         throw new Error("Neteisingas atsarginės kopijos failo formatas");
       }
 
-      validateSelectors(data.ehrqo_selectors.selectors);
+      const normalizedSelectors = normalizeStoredSelectors(data.ehrqo_selectors);
+      validateSelectors(normalizedSelectors.selectors);
       data.ehrqo_recipes.forEach(validateRecipe);
 
-      chrome.storage.sync.set(data, () => {
+      chrome.storage.sync.set({
+        ehrqo_selectors: normalizedSelectors,
+        ehrqo_recipes: data.ehrqo_recipes,
+        ehrqo_categories: data.ehrqo_categories
+      }, () => {
         setStatus("Settings restored. Reload your EHR tab.", "success");
         load();
       });
@@ -1837,7 +1893,7 @@ function restore(e) {
 // Load with recipe list
 function load() {
   chrome.storage.sync.get(['ehrqo_selectors','ehrqo_recipes','ehrqo_categories'], (data) => {
-    const selectors = data.ehrqo_selectors || DEFAULT_SELECTORS;
+    const selectors = normalizeStoredSelectors(data.ehrqo_selectors);
     const recipes = data.ehrqo_recipes || DEFAULT_RECIPES;
     categories = deepClone(data.ehrqo_categories || DEFAULT_CATEGORIES);
     selectedCategory = null;
@@ -2001,7 +2057,7 @@ function init() {
   console.log('Initializing options page...'); // Debug log
   initTabs(); // Initialize tab switching
   chrome.storage.sync.get(['ehrqo_selectors', 'ehrqo_recipes', 'ehrqo_categories'], (data) => {
-    const selectors = data.ehrqo_selectors || DEFAULT_SELECTORS;
+    const selectors = normalizeStoredSelectors(data.ehrqo_selectors);
     const recipes = data.ehrqo_recipes || DEFAULT_RECIPES;
     categories = deepClone(data.ehrqo_categories || DEFAULT_CATEGORIES);
     selectedCategory = null;

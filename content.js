@@ -1215,11 +1215,64 @@ async function resumePendingRunIfNeeded(state) {
   }
 }
 // ---------------- Load settings then mount ----------------
+const KNOWN_XPATH_KEYS = new Set(Object.keys(DEFAULT_XPATHS));
+
+function isPlainObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isLikelyXPathEntry(key, value) {
+  if (KNOWN_XPATH_KEYS.has(key)) return true;
+  if (typeof key === 'string' && key.toLowerCase().includes('xpath')) {
+    return true;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed.startsWith('//') || trimmed.startsWith('.//') || trimmed.startsWith('(')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function normalizeStoredSelectors(raw) {
+  const baseSelectors = { ...DEFAULT_SELECTORS };
+  const baseXpaths = { ...DEFAULT_XPATHS };
+
+  if (!isPlainObject(raw)) {
+    return { selectors: baseSelectors, xpaths: baseXpaths };
+  }
+
+  const hasNestedSelectors = isPlainObject(raw.selectors);
+  const hasNestedXpaths = isPlainObject(raw.xpaths);
+
+  if (hasNestedSelectors || hasNestedXpaths) {
+    if (hasNestedSelectors) {
+      Object.assign(baseSelectors, raw.selectors);
+    }
+    if (hasNestedXpaths) {
+      Object.assign(baseXpaths, raw.xpaths);
+    }
+    return { selectors: baseSelectors, xpaths: baseXpaths };
+  }
+
+  Object.entries(raw).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    if (isLikelyXPathEntry(key, value)) {
+      baseXpaths[key] = value;
+    } else {
+      baseSelectors[key] = value;
+    }
+  });
+
+  return { selectors: baseSelectors, xpaths: baseXpaths };
+}
+
 async function loadState() {
   const key = ['ehrqo_selectors','ehrqo_recipes'];
   const p = new Promise(res => chrome.storage.sync.get(key, res));
   const data = await p;
-  const selectors = data.ehrqo_selectors || { selectors: DEFAULT_SELECTORS, xpaths: DEFAULT_XPATHS };
+  const selectors = normalizeStoredSelectors(data.ehrqo_selectors);
   const recipes   = data.ehrqo_recipes   || DEFAULT_RECIPES;
   return { selectors, recipes };
 }
