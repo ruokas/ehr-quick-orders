@@ -236,6 +236,18 @@ const ACTIONS_NEED_SELECTOR = new Set(['waitFor','click','setValue','selectOptio
 const ACTIONS_NEED_VALUE = new Set(['setValue','selectOption']);
 const ACTIONS_SUPPORT_SKIP_IF_EMPTY = new Set(['setValue','selectOption','clickText']);
 
+function sanitizeSelectorValue(value, kind = 'css') {
+  if (typeof value !== 'string') {
+    return value;
+  }
+  let result = value;
+  if (kind === 'css') {
+    result = result.replace(/\.ehrqo-highlight\b/g, '');
+    result = result.replace(/\.ehrqo-picker-[\w-]+\b/g, '');
+  }
+  return result.replace(/\s+/g, ' ').trim();
+}
+
 function generateActionUid() {
   return 'act_' + Math.random().toString(36).slice(2, 10);
 }
@@ -959,7 +971,11 @@ async function runSelectorTest(targetKey, kind = 'css') {
   if (!input) {
     return;
   }
-  const value = (input.value || '').trim();
+  const rawValue = (input.value || '').trim();
+  const value = sanitizeSelectorValue(rawValue, kind === 'xpath' ? 'xpath' : 'css');
+  if (value !== rawValue) {
+    input.value = value;
+  }
   if (!value) {
     alert('Pirmiausia įveskite selektoriaus reikšmę.');
     return;
@@ -981,7 +997,7 @@ async function runSelectorTest(targetKey, kind = 'css') {
         throw new Error((preview && preview.error) || 'Nepavyko patikrinti xpath.');
       }
       const count = preview.result?.matchedCount ?? 0;
-      setStatus(`Rasta ${count} elementų pagal ivesta teksta.`, count ? 'success' : 'info');
+      setStatus(`Rasta ${count} elementų pagal įvestą tekstą.`, count ? 'success' : 'info');
       if (count && confirm('Paspausti pirmą atitikmenį?')) {
         const exec = await sendActionToEhr({ type: 'clickText', xpath: value, text: trimmed }, { preview: false });
         if (!exec || exec.ok === false) {
@@ -997,7 +1013,7 @@ async function runSelectorTest(targetKey, kind = 'css') {
       throw new Error((preview && preview.error) || 'Nepavyko patikrinti selektoriaus.');
     }
     const count = preview.result?.matchedCount ?? 0;
-    setStatus(`Rasta ${count} elementų su siuo selektoriumi.`, count ? 'success' : 'info');
+    setStatus(`Rasta ${count} elementų su šiuo selektoriumi.`, count ? 'success' : 'info');
     if (count && confirm('Paspausti elementą dabar?')) {
       const exec = await sendActionToEhr({ type: 'click', selector: value, selectorKey: targetKey }, { preview: false });
       if (!exec || exec.ok === false) {
@@ -1009,6 +1025,8 @@ async function runSelectorTest(targetKey, kind = 'css') {
     setStatus(error.message || String(error), 'error', true);
   }
 }
+
+
 
 
 function applyTheme(theme = 'light') {
@@ -1149,6 +1167,9 @@ function initSelectorFields() {
   }
 
   currentSelectors = { ...DEFAULT_SELECTORS.selectors, ...selectorData };
+  Object.keys(currentSelectors).forEach((key) => {
+    currentSelectors[key] = sanitizeSelectorValue(currentSelectors[key], 'css');
+  });
   currentXpaths = { ...DEFAULT_SELECTORS.xpaths, ...xpathData };
 
   selectorKeys = Object.keys(currentSelectors);
@@ -1278,7 +1299,8 @@ function updateSelectorsFromFields() {
   selectorKeys.forEach((key) => {
     const input = document.getElementById('sel_' + key);
     if (input) {
-      currentSelectors[key] = input.value;
+      currentSelectors[key] = sanitizeSelectorValue(input.value, 'css');
+      input.value = currentSelectors[key];
     }
   });
   selEl.value = JSON.stringify(currentSelectors, null, 2);
@@ -1468,8 +1490,12 @@ chrome.runtime.onMessage.addListener((message) => {
     const { css, targetField } = message.data;
     const input = document.querySelector(`#sel_${targetField}`);
     if (input) {
-      input.value = css;
+      const sanitized = sanitizeSelectorValue(css, selectorKeySet.has(targetField) ? 'css' : undefined);
+      input.value = sanitized;
       input.classList.remove('picker-active');
+      if (selectorKeySet.has(targetField)) {
+        currentSelectors[targetField] = sanitized;
+      }
     }
 
     setStatus('Selector captured. Saved to the form.', 'success');

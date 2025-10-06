@@ -154,6 +154,7 @@ class SelectorPicker {
 
     if (el.classList && el.classList.length) {
       const classSelectors = Array.from(el.classList)
+        .filter((c) => c && !c.startsWith('ehrqo-'))
         .map((c) => `.${this.cssEscape(c)}`)
         .join('');
       if (classSelectors) {
