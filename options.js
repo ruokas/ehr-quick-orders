@@ -135,7 +135,7 @@ function updateCategoryButtons() {
 }
 
 function addCategory(parentPath = null) {
-  const label = parentPath ? 'Iveskite subkategorijos pavadinima:' : 'Iveskite kategorijos pavadinima:';
+  const label = parentPath ? 'Įveskite subkategorijos pavadinimą:' : 'Įveskite kategorijos pavadinimą:';
   const rawName = prompt(label);
   if (rawName === null) {
     return;
@@ -147,7 +147,7 @@ function addCategory(parentPath = null) {
   }
 
   if (newName.includes('/')) {
-    alert('Kategorijos pavadinimas negali tureti simbolio "/"');
+    alert('Kategorijos pavadinimas negali turėti simbolio "/"');
     return;
   }
 
@@ -156,7 +156,7 @@ function addCategory(parentPath = null) {
     const parts = parentPath.split('/');
     for (const part of parts) {
       if (!target[part]) {
-        alert('Pasirinkta kategorija nerasta. Perkraukite puslapi ir bandykite dar karta.');
+        alert('Pasirinkta kategorija nerasta. Perkraukite puslapį ir bandykite dar kartą.');
         return;
       }
       target = target[part];
