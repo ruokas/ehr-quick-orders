@@ -681,7 +681,41 @@ const api = {
   },
   async safeClick(sel, timeout = 8000) {
     const el = await this.waitFor(sel, timeout);
-    el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    if (typeof el.focus === 'function') {
+      try {
+        el.focus({ preventScroll: true });
+      } catch (_) {
+        try { el.focus(); } catch (_) {}
+      }
+    }
+
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+      try {
+        const length = typeof el.value === 'string' ? el.value.length : 0;
+        el.setSelectionRange(length, length);
+      } catch (_) {
+        // ignore selection errors (e.g., unsupported input types)
+      }
+    } else if (el.isContentEditable) {
+      try {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        const selection = window.getSelection();
+        if (selection) {
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      } catch (_) {
+        // ignore selection issues for contenteditable elements
+      }
+    }
+
+    if (typeof el.click === 'function') {
+      el.click();
+    } else {
+      el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+    }
     await sleep(100);
   }
 };
