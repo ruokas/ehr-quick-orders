@@ -125,6 +125,61 @@ function updateCategoryEditor() {
   orderEl.value = '0';
 }
 
+function updateCategoryButtons() {
+  const hasSelection = !!selectedCategory;
+  const addSubBtn = document.getElementById('addSubCategory');
+  const deleteBtn = document.getElementById('deleteCategory');
+
+  if (addSubBtn) addSubBtn.disabled = !hasSelection;
+  if (deleteBtn) deleteBtn.disabled = !hasSelection;
+}
+
+function addCategory(parentPath = null) {
+  const label = parentPath ? 'Iveskite subkategorijos pavadinima:' : 'Iveskite kategorijos pavadinima:';
+  const rawName = prompt(label);
+  if (rawName === null) {
+    return;
+  }
+
+  const newName = rawName.trim();
+  if (!newName) {
+    return;
+  }
+
+  if (newName.includes('/')) {
+    alert('Kategorijos pavadinimas negali tureti simbolio "/"');
+    return;
+  }
+
+  let target = categories;
+  if (parentPath) {
+    const parts = parentPath.split('/');
+    for (const part of parts) {
+      if (!target[part]) {
+        alert('Pasirinkta kategorija nerasta. Perkraukite puslapi ir bandykite dar karta.');
+        return;
+      }
+      target = target[part];
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(target, newName)) {
+    alert('Category name already exists!');
+    return;
+  }
+
+  target[newName] = {};
+  selectedCategory = parentPath ? `${parentPath}/${newName}` : newName;
+
+  renderCategoryTree();
+  updateCategoryEditor();
+  populateCategorySelect();
+
+  chrome.storage.sync.set({ ehrqo_categories: categories }, () => {
+    setStatus('Category added. Refresh your EHR tab.', 'success');
+  });
+}
+
 const DEFAULT_RECIPES = [
   {
     id: 'ct_head_stroke',
@@ -1544,8 +1599,11 @@ function validateRecipe(recipe) {
 
 function populateCategorySelect() {
   const select = document.getElementById('recipeCategory');
+  if (!select) return;
+
+  const previousValue = select.value;
   select.innerHTML = '<option value="General">General</option>';
-  
+
   function addOptions(obj, prefix = '') {
     Object.keys(obj).sort().forEach(key => {
       const fullPath = prefix ? `${prefix}/${key}` : key;
@@ -1553,19 +1611,27 @@ function populateCategorySelect() {
       option.value = fullPath;
       option.textContent = fullPath;
       select.appendChild(option);
-      
-      // Recursively add subcategories
+
       if (Object.keys(obj[key]).length > 0) {
         addOptions(obj[key], fullPath);
       }
     });
   }
-  
+
   addOptions(categories);
+
+  if (previousValue) {
+    const hasMatch = Array.from(select.options).some(option => option.value === previousValue);
+    if (hasMatch) {
+      select.value = previousValue;
+    }
+  }
 }
+
 
 function showRecipeModal(recipe = null) {
   editingRecipe = recipe;
+  populateCategorySelect();
   document.getElementById('recipeModalTitle').textContent = recipe ? 'Redaguoti šabloną' : 'Pridėti šabloną';
 
   const idInput = document.getElementById('recipeId');
@@ -1834,6 +1900,7 @@ function deleteCategory() {
   selectedCategory = null;
   renderCategoryTree();
   updateCategoryEditor();
+  populateCategorySelect();
   
   // Save categories to storage
   chrome.storage.sync.set({ ehrqo_categories: categories }, () => {
@@ -1884,6 +1951,8 @@ document.getElementById('categoryName').addEventListener('change', (e) => {
     delete current[oldName];
     selectedCategory = parts.length ? `${parts.join('/')}/${newName}` : newName;
     renderCategoryTree();
+    updateCategoryEditor();
+    populateCategorySelect();
     
     // Save categories to storage
     chrome.storage.sync.set({ ehrqo_categories: categories }, () => {

@@ -94,6 +94,67 @@ const $q = (sel, root = document) => root.querySelector(sel);
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 let ehrqoState = null;
 
+function deepClone(value) {
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch (err) {
+    console.warn('[ehrqo] Failed to clone value', err);
+    return null;
+  }
+}
+
+const RUN_STATE_KEY = 'ehrqo_pending_run_v1';
+const NAVIGATION_ACTION_TYPES = new Set(['click', 'clickText']);
+let activeRunState = null;
+let activeActionContext = null;
+let hasAttemptedResume = false;
+
+function loadRunState() {
+  try {
+    const raw = sessionStorage.getItem(RUN_STATE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (error) {
+    console.warn('[ehrqo] Failed to load run state', error);
+    return null;
+  }
+}
+
+function saveRunState(state) {
+  if (!state) return;
+  try {
+    sessionStorage.setItem(RUN_STATE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.warn('[ehrqo] Failed to persist run state', error);
+  }
+}
+
+function clearRunState() {
+  try {
+    sessionStorage.removeItem(RUN_STATE_KEY);
+  } catch (error) {
+    console.warn('[ehrqo] Failed to clear run state', error);
+  }
+}
+
+window.addEventListener('pagehide', () => {
+  if (!activeRunState || !activeActionContext) return;
+  const { action, index } = activeActionContext;
+  if (!action || !NAVIGATION_ACTION_TYPES.has(action.type)) {
+    return;
+  }
+  const stored = loadRunState();
+  if (!stored || stored.runId !== activeRunState.runId) {
+    return;
+  }
+  if ((stored.index ?? 0) <= index) {
+    stored.index = index + 1;
+    stored.status = 'pending';
+    saveRunState(stored);
+  }
+});
+
+
 function hasAdvancedSteps(recipe) {
   return Array.isArray(recipe?.steps) && recipe.steps.length > 0;
 }
@@ -282,7 +343,7 @@ async function executeAction(action, selectors, options = {}) {
         highlightElement(matches[0]);
         return { matchedCount: matches.length, selector };
       }
-      await api.safeClick(selector);
+      await api.safeClick(selector, normalizeTimeout(action.timeout, 8000));
       return { matchedCount: 1, selector };
     }
     case 'setValue': {
@@ -383,34 +444,143 @@ async function executeAction(action, selectors, options = {}) {
       throw new Error(`Unsupported action type: ${action.type}`);
   }
 }
-
-async function runAdvancedRecipe(recipe, selectors) {
-  const steps = Array.isArray(recipe?.steps) ? recipe.steps : [];
-  for (const action of steps) {
+function generateRunId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     try {
-      await executeAction(action, selectors, { preview: false });
-    } catch (error) {
-      if (action && action.allowFailure) {
-        console.warn('[ehrqo] Action failed but is marked optional', action, error);
-        continue;
-      }
-      throw error;
+      return crypto.randomUUID();
+    } catch (_) {
+      // ignore and fall back
     }
   }
+  return 'run_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
 }
 
-async function runAdvancedRecipe(recipe, selectors) {
-  const steps = Array.isArray(recipe?.steps) ? recipe.steps : [];
-  for (const action of steps) {
+function snapshotSelectors(source) {
+  if (!source || typeof source !== 'object') {
+    return {
+      selectors: { ...DEFAULT_SELECTORS },
+      xpaths: { ...DEFAULT_XPATHS }
+    };
+  }
+  return {
+    selectors: { ...(source.selectors || DEFAULT_SELECTORS) },
+    xpaths: { ...(source.xpaths || DEFAULT_XPATHS) }
+  };
+}
+
+async function processRunState(runState) {
+  const actions = Array.isArray(runState.actions) ? runState.actions : [];
+  if (!actions.length) {
+    clearRunState();
+    return;
+  }
+
+  const selectorsSnapshot = snapshotSelectors(runState.selectors || ehrqoState?.selectors || { selectors: DEFAULT_SELECTORS, xpaths: DEFAULT_XPATHS });
+  runState.selectors = selectorsSnapshot;
+
+  api.selectors = selectorsSnapshot.selectors;
+  api.xpaths = selectorsSnapshot.xpaths;
+
+  for (let i = runState.index || 0; i < actions.length; i++) {
+    const action = actions[i];
+    runState.index = i;
+    runState.status = 'running';
+    delete runState.lastError;
+    saveRunState(runState);
+
+    activeActionContext = { index: i, action };
     try {
-      await executeAction(action, selectors, { preview: false });
+      await executeAction(action, selectorsSnapshot, { preview: false });
     } catch (error) {
+      activeActionContext = null;
       if (action && action.allowFailure) {
         console.warn('[ehrqo] Action failed but is marked optional', action, error);
+        runState.index = i + 1;
+        saveRunState(runState);
         continue;
       }
+      runState.status = 'error';
+      runState.lastError = error.message || String(error);
+      saveRunState(runState);
       throw error;
     }
+
+    activeActionContext = null;
+    runState.index = i + 1;
+    runState.status = 'running';
+    saveRunState(runState);
+  }
+
+  runState.status = 'completed';
+  saveRunState(runState);
+  clearRunState();
+}
+
+async function runAdvancedRecipe(recipe, selectors, options = {}) {
+  const resume = options.resume === true;
+  const existingState = options.existingState || null;
+
+  if (resume && existingState) {
+    const selectorsSnapshot = snapshotSelectors(existingState.selectors || selectors || ehrqoState?.selectors || {});
+    const actions = Array.isArray(existingState.actions) && existingState.actions.length
+      ? existingState.actions
+      : (Array.isArray(recipe?.steps) ? deepClone(recipe.steps) || [] : []);
+    if (!actions.length) {
+      clearRunState();
+      return;
+    }
+    const runState = {
+      ...existingState,
+      actions,
+      selectors: selectorsSnapshot,
+      status: 'running'
+    };
+    saveRunState(runState);
+    activeRunState = runState;
+    try {
+      await processRunState(runState);
+      api.status('Baigta.');
+    } finally {
+      activeRunState = null;
+      activeActionContext = null;
+    }
+    return;
+  }
+
+  const steps = Array.isArray(recipe?.steps) ? deepClone(recipe.steps) || [] : [];
+  if (!steps.length) {
+    return;
+  }
+
+  const selectorsSnapshot = snapshotSelectors(selectors || ehrqoState?.selectors || {});
+  const pending = loadRunState();
+  if (pending && pending.status !== 'error' && (pending.index ?? 0) < (Array.isArray(pending.actions) ? pending.actions.length : 0)) {
+    api.status('Kitas scenarijus vis dar vykdomas. Palaukite kol baigs vykdymas.');
+    return;
+  }
+
+  const label = (recipe?.label || recipe?.id || '').trim();
+  api.status(label ? `Vykdomas scenarijus: ${label}` : 'Vykdomas scenarijus');
+
+  const runState = {
+    runId: generateRunId(),
+    recipeId: recipe?.id || '',
+    recipeLabel: recipe?.label || '',
+    actions: steps,
+    selectors: selectorsSnapshot,
+    index: 0,
+    startedAt: Date.now(),
+    status: 'running'
+  };
+
+  saveRunState(runState);
+  activeRunState = runState;
+  try {
+    await processRunState(runState);
+    api.status('Baigta.');
+  } finally {
+    activeRunState = null;
+    activeActionContext = null;
   }
 }
 
@@ -507,6 +677,11 @@ const api = {
     if (!opt) throw new Error(`Pasirinkimas nerastas: ${text}`);
     el.value = opt.value;
     el.dispatchEvent(new Event('change', { bubbles: true }));
+    await sleep(100);
+  },
+  async safeClick(sel, timeout = 8000) {
+    const el = await this.waitFor(sel, timeout);
+    el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await sleep(100);
   }
 };
@@ -672,6 +847,10 @@ function injectPanel(state) {
         opacity: 0.5;
         cursor: not-allowed;
       }
+
+      .ehrqo-btn.ehrqo-running {
+        outline: 1px solid #22c55e;
+      }
       
       .ehrqo-muted {
         padding: 6px 8px;
@@ -765,6 +944,10 @@ function injectPanel(state) {
     content.innerHTML = '';
     const lFilter = searchFilter.toLowerCase();
 
+  const pendingRun = loadRunState();
+  const runInProgress = !!(pendingRun && pendingRun.status !== 'error' && (pendingRun.index ?? 0) < (Array.isArray(pendingRun.actions) ? pendingRun.actions.length : 0));
+  const activeRecipeId = runInProgress ? pendingRun.recipeId : null;
+
     let recipes = state.recipes;
     if (searchFilter) {
       recipes = recipes.filter(r => {
@@ -790,6 +973,16 @@ function injectPanel(state) {
       if (display.emergency) btn.classList.add('emergency');
       btn.dataset.recipe = r.id;
 
+      if (runInProgress) {
+        btn.disabled = true;
+        if (activeRecipeId && activeRecipeId === r.id) {
+          btn.classList.add('ehrqo-running');
+          btn.title = 'Vykdomas scenarijus';
+        } else {
+          btn.title = 'Palaukite kol baigs vykdymas';
+        }
+      }
+
       const labelSpan = document.createElement('span');
       labelSpan.textContent = r.label;
       btn.appendChild(labelSpan);
@@ -809,11 +1002,24 @@ function injectPanel(state) {
     const grid = document.createElement('div');
     grid.className = 'ehrqo-grid';
 
+    const pendingRun = loadRunState();
+    const runInProgress = !!(pendingRun && pendingRun.status !== 'error' && (pendingRun.index ?? 0) < (Array.isArray(pendingRun.actions) ? pendingRun.actions.length : 0));
+    const activeRecipeId = runInProgress ? pendingRun.recipeId : null;
+
     recipes.forEach(r => {
       const display = deriveRecipeDisplayConfig(r);
       const btn = document.createElement('button');
       btn.className = 'ehrqo-btn';
       btn.dataset.recipe = r.id;
+      if (runInProgress) {
+        btn.disabled = true;
+        if (activeRecipeId && activeRecipeId === r.id) {
+          btn.classList.add('ehrqo-running');
+          btn.title = 'Vykdomas scenarijus';
+        } else {
+          btn.title = 'Palaukite kol baigs vykdymas';
+        }
+      }
       if (display.emergency) btn.classList.add('emergency');
 
       const searchText = (display.searchTerm || '').trim();
@@ -853,6 +1059,7 @@ function injectPanel(state) {
   panel.addEventListener('click', async (e) => {
     const btn = e.target.closest('button.ehrqo-btn');
     if (!btn) return;
+    if (btn.disabled) return;
     const id = btn.dataset.recipe;
     const recipe = state.recipes.find(r => r.id === id);
     if (!recipe) return;
@@ -982,6 +1189,31 @@ function setupHotkeyListener(recipes, selectors) {
   });
 }
 
+async function resumePendingRunIfNeeded(state) {
+  if (hasAttemptedResume) return;
+  hasAttemptedResume = true;
+  const stored = loadRunState();
+  if (!stored) return;
+  const actions = Array.isArray(stored.actions) ? stored.actions : [];
+  if (!actions.length) {
+    clearRunState();
+    return;
+  }
+  if (stored.status === 'error') {
+    return;
+  }
+  const selectorsSnapshot = snapshotSelectors(stored.selectors || state?.selectors || {});
+  const recipeFromState = Array.isArray(state?.recipes) ? state.recipes.find(r => r.id === stored.recipeId) : null;
+  const resumeRecipe = recipeFromState ? { ...recipeFromState, steps: actions } : { id: stored.recipeId, label: stored.recipeLabel || stored.recipeId, steps: actions };
+  try {
+    const label = (resumeRecipe.label || resumeRecipe.id || '').trim();
+    api.status(label ? `Tesiamas scenarijus: ${label}` : 'Tesiamas scenarijus');
+    await runAdvancedRecipe(resumeRecipe, selectorsSnapshot, { resume: true, existingState: { ...stored, selectors: selectorsSnapshot } });
+  } catch (error) {
+    console.error('[ehrqo] Failed to resume run', error);
+    api.status(`[!] ${error.message || String(error)}`);
+  }
+}
 // ---------------- Load settings then mount ----------------
 async function loadState() {
   const key = ['ehrqo_selectors','ehrqo_recipes'];
@@ -997,6 +1229,7 @@ async function loadState() {
     const state = await loadState();
     ehrqoState = state;
     injectPanel(state);
+    await resumePendingRunIfNeeded(state);
     setupHotkeyListener(state.recipes, state.selectors);
     // Re-mount on SPA changes
     const obs = new MutationObserver(() => injectPanel(state));
