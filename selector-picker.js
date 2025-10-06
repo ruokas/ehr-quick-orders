@@ -345,9 +345,14 @@ class SelectorPicker {
 // Start picker when receiving message from options page
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'start-picker' && message.data?.targetField) {
-    const picker = new SelectorPicker();
-    picker.start(message.data.targetField);
-    sendResponse({ success: true });
+    try {
+      const picker = new SelectorPicker();
+      picker.start(message.data.targetField);
+      sendResponse({ success: true });
+    } catch (error) {
+      console.error('[ehrqo] Failed to start selector picker', error);
+      sendResponse({ success: false, error: error?.message || String(error) });
+    }
   }
 });
 
